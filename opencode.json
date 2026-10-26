@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "nuxtseo": {
+      "type": "remote",
+      "url": "https://nuxtseo.com/mcp",
+      "enabled": true
+    },
+    "nuxtseo-pro":{
+      "type": "remote",
+      "url": "https://nuxtseo.com/mcp/pro",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer nsp_team_27eea7ad9b48f3c9b26ea67e3ddaf1d0fd47d418144803cce59b0aa5c0b28403"
+      }
+    },
+    "stripe": {
+      "type": "remote",
+      "url": "https://mcp.stripe.com",
+      "enabled": true
+    }
+  }
+}

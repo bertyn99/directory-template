@@ -1,0 +1,480 @@
+{
+  "ads": {
+    "label": "Werbung"
+  },
+  "breadcrumb": {
+    "items": {
+      "home": {
+        "icon": "heroicons:home",
+        "ariaLabel": "Startseite",
+        "label": "Startseite"
+      },
+      "about": {
+        "icon": "heroicons:information-circle",
+        "ariaLabel": "Über uns",
+        "label": "Über uns"
+      },
+      "venues": {
+        "icon": "heroicons:users",
+        "ariaLabel": "Venues",
+        "label": "Venues"
+      },
+      "countries": {
+        "icon": "heroicons:globe-alt",
+        "ariaLabel": "Länder",
+        "label": "Länder"
+      },
+      "categories": {
+        "list": {
+          "icon": "heroicons:collection",
+          "ariaLabel": "Stile",
+          "label": "Stile"
+        },
+        "detail": {
+          "icon": "heroicons:sparkles",
+          "ariaLabel": "Stil {category}",
+          "label": "Stil {category}"
+        }
+      },
+      "blog": {
+        "icon": "heroicons:pencil-alt",
+        "ariaLabel": "Blog",
+        "label": "Blog"
+      }
+    }
+  },
+  "nav": {
+    "home": "Startseite",
+    "about": "Über uns",
+    "venues": "Venues",
+    "countries": "Länder",
+    "categories": {
+      "list": "Stile",
+      "detail": "Stil {category}"
+    },
+    "blog": "Blog",
+    "families": {
+      "striking": "Fitness & Cardio",
+      "grappling": "Kraft & Mobilität",
+      "traditional": "Traditionelle Disziplinen",
+      "fitness": "Fitness & Wellness"
+    },
+    "addVenue": "Verein hinzufügen",
+    "mostSearched": "Meistgesuchte Stile",
+    "allStyles": "Alle Stile",
+    "allStylesDesc": "Alle Venue-Kategorien im Verzeichnis.",
+    "explore": "Entdecken"
+  },
+  "footer": "Alle Rechte vorbehalten.",
+  "home": {
+    "title": {
+      "pt1": "Entdecke deinen",
+      "pt2": "Lieblingsort"
+    },
+    "subTitle": "Entdecke lokale Venues, wo Leidenschaft auf Fortschritt trifft. Deine Reise beginnt hier.",
+    "pillarCta": "Wie wählst du deinen Venue?",
+    "search": {
+      "placeholder": "Gib deinen Standort ein",
+      "nofound": "Kein Venue gefunden",
+      "cta": "Finde deinen Venue",
+      "text": "Finde den perfekten Venue für dich"
+    },
+    "stats": {
+      "title": "Das Venue-Netzwerk in Europa",
+      "subtitle": "Venues, Mitglieder und Städte in ganz Europa verbinden",
+      "venues": "Gelistete Venues",
+      "cities": "Aktive Städte",
+      "countries": "Länder",
+      "categories": "Kategorien"
+    }
+  },
+  "categories": {
+    "title": "Venue-Kategorien erkunden",
+    "subTitle": "Erkunde die Kategorien deines Verzeichnisses. Vergleiche Angebot, Ausstattung und Atmosphäre für deine nächste Einheit.",
+    "cta": "Mehr über {category} erfahren",
+    "details": "Entdecke {category}",
+    "meta": {
+      "badge": "Disziplin-Radar",
+      "catalogTitle": "Katalog",
+      "catalog": "{count} erfasste Kategorien",
+      "catalogHint": "Verifiziert über den Directory Index",
+      "refreshTitle": "Datenstatus",
+      "refresh": "Wöchentlich aktualisiert",
+      "refreshHint": "Frische Signale aus Venues, Partnern und Events",
+      "focusTitle": "Fokus-Bereiche",
+      "focus": "Fitness • Yoga • Spa",
+      "focusHint": "Wechsle die Perspektive mit einem Blick"
+    },
+    "card": {
+      "descriptionFallback": "Details zu dieser Kategorie werden zusammengestellt."
+    },
+    "noContent": "Inhalte für diese Kategorie werden vorbereitet.",
+    "cities": {
+      "title": "In welchen Städten kannst du {category} trainieren?",
+      "venue": "Entdecke {category}-Venues in {city}",
+      "more": "Mehr anzeigen",
+      "seeMore": "Mehr anzeigen",
+      "similar": "Ähnliche Kategorien"
+    },
+    "hub": {
+      "heading": "{category}: finde deinen Venue",
+      "answerBox": "Finde einen {category}-Venue in deiner Nähe: Studios, Anfängerkurse und Trainingszeiten in {count} Städten. Vergleiche Venues, prüfe die Adresse und nimm direkt Kontakt auf. Starte mit einer Probestunde.",
+      "whatTitle": "Was ist {category}",
+      "guidesTitle": "Guides",
+      "whereTitle": "Wo {category} trainieren",
+      "featuredTitle": "Venues im Fokus",
+      "readGuide": "{category}-Guide lesen",
+      "venueCount": "{count} Verein | {count} Vereine",
+      "venueCtaCount": "{count} {category}-Verein gelistet | {count} {category}-Vereine gelistet",
+      "seoTitle": "{category}: finde deinen Venue",
+      "seoDescription": "{category}: finde einen Venue in deiner Nähe. {count} Städte, Anfängerkurse, Studios vergleichen. Wählen und starten.",
+      "seoKeywords": "{category}, {category} Venue, {category} Kurs, {category} Studio, {category} in meiner Nähe",
+      "faqTitle": "Häufige Fragen",
+      "faq": {
+        "where": {
+          "q": "Wo kann ich {category} in meiner Nähe trainieren?",
+          "a": "Nutze die Städte unten, um die {category}-Venues in deiner Stadt zu öffnen. Jede Venueseite zeigt Adresse und Kontakt."
+        },
+        "price": {
+          "q": "Was kostet ein {category}-Venue?",
+          "a": "Die Preise hängen von Stadt und Tarif ab. Die meisten Venues bieten eine kostenlose oder günstige Probestunde. Frage die aktuellen Beiträge direkt im Venue."
+        },
+        "kids": {
+          "q": "Können Kinder {category} trainieren?",
+          "a": "Viele Venues bieten Kinderkurse. Prüfe Mindestalter und Zeiten auf der Venueseite oder frage vor der Anmeldung nach."
+        },
+        "trial": {
+          "q": "Wie buche ich eine Probestunde in {category}?",
+          "a": "Öffne eine Vereinsseite, kontaktiere den Venue und frage nach einer Probe. Die meisten Studios bieten die erste Stunde kostenlos oder günstig an."
+        },
+        "licence": {
+          "q": "Brauche ich eine Lizenz für {category}?",
+          "a": "Oft ja, über das Netzwerk des Venues. Frage, was im Beitrag enthalten ist (Lizenz, Versicherung, Kurszugang), bevor du dich anmeldest."
+        }
+      }
+    },
+    "cityPage": {
+      "seoTitle": "{category} in {city}: {count} Venues — Öffnungszeiten & Preise",
+      "seoDescription": "Finde deinen {category}-Kurs in {city}: {count} Venues und Studios, Anfänger- und Fortgeschrittenenkurse, Filter nach Stadtteil, Trainingszeiten und direkte Kontakte.",
+      "seoKeywords": "{category} {city}, {category} Kurse {city}, {category} Venue {city}, {category} Studio {city}, {category} Anfänger {city}, Verzeichnis {city}",
+      "heading": "{category} in {city}",
+      "subheading": "{count} {category}-Venue in {city} | {count} {category}-Venues in {city}",
+      "intro": "{count} {category}-Venue in {city}: Anfängerkurse, Abend- und Wochenendtermine. Filtere nach Stadtteil und kontaktiere den Venue direkt. | {count} {category}-Venues in {city}: Anfänger- und Fortgeschrittenenkurse, Abend- und Wochenendtermine. Filtere nach Stadtteil, vergleiche die Studios und kontaktiere den Venue direkt.",
+      "introExtra": "Wo kannst du {category} in {city} trainieren? Die Venues verteilen sich über mehrere Stadtteile: prüfe Adresse, Trainingszeiten und Preise auf der Venueseite, bevor du deine Probestunde buchst.",
+      "exploreOtherCities": "{category} in anderen Städten entdecken",
+      "backToStyle": "Mehr über {category} erfahren",
+      "pagination": "Seite {page} von {total}",
+      "viewVenue": "Venue ansehen",
+      "chooseTitle": "So wählst du den richtigen Venue",
+      "chooseLocationTitle": "Der Stadtteil",
+      "chooseLocationBody": "Wähle ein Studio nahe Wohnort oder Arbeit. Ein kurzer Weg bedeutet mehr Training.",
+      "chooseVisitTitle": "Der Besuch",
+      "chooseVisitBody": "Kontaktiere den Venue, schau dir ein Training an und sprich mit den Trainern. Die Venueseite zeigt Website und Telefonnummer, wenn vorhanden.",
+      "chooseStyleTitle": "Die angebotene Kategorie",
+      "chooseStyleBody": "Vergewissere dich, dass der Venue wirklich {category} anbietet, nicht nur eine ähnliche Aktivität. Die Aktivitäten stehen auf jeder Venueseite.",
+      "breadcrumb": "{category} in {city}",
+      "venueCount": "{count} Venue | {count} Venues",
+      "emptyTitle": "Keine {category}-Venues in {city} gefunden",
+      "emptyDescription": "Wir haben noch keine {category}-Venues in {city}. Entdecke Venues in anderen Städten.",
+      "emptyFilterTitle": "Keine Venues in diesem Stadtteil",
+      "emptyFilterDescription": "Für diese Postleitzahl sind keine {category}-Venues hinterlegt. Setze den Filter zurück, um die ganze Stadt zu sehen.",
+      "resetFilter": "Ganze Stadt",
+      "neighborhoodsTitle": "Stadtteile",
+      "neighborhoodsHint": "Filtere die Liste nach Postleitzahl.",
+      "allNeighborhoods": "Ganze Stadt",
+      "arrondissement": "{n}. Arr.",
+      "arrondissementFirst": "1. Arr.",
+      "otherCitiesTitle": "{category} in großen europäischen Städten",
+      "countryCitiesTitle": "{category} in den größten Städten {prep} {country}",
+      "countryCitiesTitleGeneric": "{category} in den größten Städten des Landes",
+      "closeLead": "{category} außerhalb von {city}.",
+      "closeCta": "{category}-Guide",
+      "faqTitle": "Häufige Fragen",
+      "faq": {
+        "start": {
+          "q": "Kann ich {category} das ganze Jahr über in {city} anfangen?",
+          "a": "Ja, die meisten Venues nehmen ganzjährig Mitglieder auf. Kläre die Details direkt beim Venue."
+        },
+        "level": {
+          "q": "Gibt es Anfänger- oder Kinderkurse?",
+          "a": "Das hängt vom Venue ab. Diese Infos haben wir noch nicht in der Datenbank: öffne die Venueseite und frag nach Level und Altersgruppen."
+        },
+        "licence": {
+          "q": "Brauche ich einen Verbandsbeitrag?",
+          "a": "Oft ja, über das Netzwerk des Venues. Frag nach, was im Beitrag enthalten ist."
+        },
+        "area": {
+          "q": "Wie wähle ich einen Stadtteil in {city}?",
+          "a": "Nutze den Postleitzahl-Filter oben. Wähle einen Venue, den du regelmäßig erreichen kannst."
+        },
+        "price": {
+          "q": "Was kostet ein {category}-Kurs in {city}?",
+          "a": "Die meisten Venues bieten eine kostenlose oder günstige Probestunde an. Rechne mit etwa 10–20 € pro Stunde oder einer Monatsmitgliedschaft — genaue Preise stehen auf der jeweiligen Venueseite."
+        },
+        "equipment": {
+          "q": "Welche Ausrüstung brauche ich für {category} in {city}?",
+          "a": "Für die ersten Kurse reicht Sportkleidung in den meisten Venues. Spezielles Material (Matte, Handtuch, kleine Ausrüstung) wird Anfängern oft gestellt."
+        }
+      },
+      "guideLink": "Entdecke unseren vollständigen {category}-Guide",
+      "seoTitleFew": "{category} in {city}: Venues — Öffnungszeiten & Preise"
+    },
+    "intro": "Alle Venue-Kategorien in einem Verzeichnis: Fitness, Yoga, Spa, Krafttraining, Tanz, Klettern und über 40 Aktivitäten. Vergleiche die Kategorien und finde Venues in deiner Stadt."
+  },
+  "countries": {
+    "title": "Europäische Länder mit Venues",
+    "europe": "Europäische Länder",
+    "labels": {
+      "continent": "Europa",
+      "cities": "Aktive Städte",
+      "venues": "Registrierte Venues",
+      "status": {
+        "open": "Offen",
+        "soon": "Demnächst"
+      },
+      "notifySoon": "Werde benachrichtigt, sobald wir hier starten.",
+      "ctaOpen": "Venues erkunden",
+      "ctaSoon": "Fortschritt verfolgen"
+    },
+    "cities": {
+      "count": "{count} Städte mit Venues",
+      "venues": "{nbVenues} Venues insgesamt",
+      "soon": "Demnächst..."
+    }
+  },
+  "venues": {
+    "title": "Venues erkunden",
+    "subTitle": "Entdecke Venues in verschiedenen Städten und Ländern. Finde das passende Studio für deine Aktivität.",
+    "filter": {
+      "name": "Filter",
+      "badge": "Venue-Verzeichnis",
+      "adjustFilters": "Filter anpassen",
+      "stats": {
+        "tracked": "Venues erfasst",
+        "coverage": "Datenbankabdeckung",
+        "visible": "Jetzt sichtbar",
+        "results": "ergebnisse",
+        "filters": "Aktive Filter",
+        "customView": "Benutzerdefinierte Ansicht",
+        "fullDirectory": "Vollständiges Verzeichnis"
+      },
+      "filter": {
+        "tuneSearch": "Suche anpassen",
+        "subtitle": "Kombinieren Sie Filter, um Ihre Ergebnisse einzugrenzen",
+        "searchPlaceholder": "Venuename suchen...",
+        "apply": "Anwenden",
+        "reset": "Zurücksetzen",
+        "name": "Land",
+        "placeholder": "Land auswählen"
+      },
+      "city": {
+        "name": "Stadt",
+        "placeholder": "Stadt auswählen"
+      },
+      "activities": {
+        "name": "Kategorien"
+      }
+    },
+    "info": "Über uns",
+    "categories": "Kategorien",
+    "openingHours": "Öffnungszeiten",
+    "website": "Website",
+    "location": "Standort",
+    "profile": "Venue-Profil",
+    "lastUpdate": "Letzte Aktualisierung",
+    "status": {
+      "posted": "Geöffnet",
+      "incoming": "Demnächst"
+    },
+    "tel": "Telefon",
+    "mapHint": "Klicken Sie, um es in Ihrer Karten-App zu öffnen",
+    "subscription": "Abonnement",
+    "socialMedia": "Soziale Medien",
+    "seoSuffix": "Öffnungszeiten, Telefon & Preise"
+  },
+  "blog": {
+    "title": "Neueste Beiträge",
+    "subTitle": "Entdecke die neuesten Artikel im Blog",
+    "featured": "Empfohlen",
+    "allArticles": "Alle Artikel",
+    "readMore": "Weiterlesen",
+    "noPost": "Kein Beitrag gefunden",
+    "article": "Artikel",
+    "featuredSubtitle": "Experten-Einblicke und praktische Guides, um deinen Venue zu finden"
+  },
+  "common": {
+    "search": " Erkunden"
+  },
+  "country_names": {
+    "FR": "Frankreich",
+    "DE": "Deutschland",
+    "GB": "Vereinigtes Königreich",
+    "ES": "Spanien",
+    "IT": "Italien",
+    "PT": "Portugal",
+    "RE": "Réunion",
+    "AT": "Österreich",
+    "CH": "Schweiz",
+    "BE": "Belgien",
+    "NL": "Niederlande"
+  },
+  "country_prep": {
+    "FR": "in",
+    "DE": "in",
+    "GB": "in",
+    "ES": "in",
+    "IT": "in",
+    "PT": "in",
+    "RE": "in",
+    "AT": "in",
+    "CH": "in",
+    "BE": "in",
+    "NL": "in"
+  },
+  "eu_city_names": {
+    "Paris": "Paris",
+    "Berlin": "Berlin",
+    "London": "London",
+    "Barcelona": "Barcelona",
+    "Rome": "Rom",
+    "Lisbon": "Lissabon"
+  },
+  "auth": {
+    "login": {
+      "noAccount": "Noch kein Konto?",
+      "signUp": "Registrieren"
+    }
+  },
+  "affiliate": {
+    "kitTitle": "Ausrüstung zum Start",
+    "nutritionTitle": "Energie fürs Training",
+    "nutritionEyebrow": "Ernährung",
+    "shopCta": "Shoppen",
+    "alsoOn": "Auch bei {partner}",
+    "disclosure": "Affiliate-Links. Bei einem Kauf kann eine Provision anfallen."
+  },
+  "guide": {
+    "backToHub": "Alles über {category}",
+    "venueCta": "{category}-Venue finden",
+    "venueCtaDirectory": "Venue finden",
+    "browseVenues": "Venues ansehen",
+    "directoryStyleName": "Venues",
+    "toc": "Inhalt",
+    "faqTitle": "Häufige Fragen",
+    "siblings": "In diesem Silo",
+    "venueCtaCity": "{category} in {city}",
+    "types": {
+      "guide": "Guide",
+      "choisir-venue": "Verein wählen",
+      "ecoles": "Schulen",
+      "ceintures": "Fortschritt",
+      "equipement": "Ausrüstung",
+      "techniques": "Techniken"
+    }
+  },
+  "footerNav": {
+    "tagline": "Finde dein Gym.",
+    "cities": "Städte",
+    "allCities": "Alle Städte",
+    "guides": "Guides",
+    "guideVenue": "Ratgeber: den richtigen Verein wählen",
+    "comparatif": "Wie wählst du deinen Venue?",
+    "contact": "Kontakt",
+    "legal": "Impressum",
+    "language": "Sprache"
+  },
+  "pages": {
+    "about": {
+      "title": "Über uns",
+      "description": "Directory Template listet Venues in ganz Europa. Finde ein Studio, vergleiche Kategorien, starte einen Probetermin.",
+      "mission": {
+        "p1": "Directory Template listet Venues in ganz Europa: Fitness, Yoga, Spa und vieles mehr. Finde ein Studio in deiner Nähe, vergleiche Kategorien, starte einen Probetermin.",
+        "p2": "Die Seite wird von Yggdrazil betrieben. Die Venueprofile stammen von den Venues selbst und aus öffentlichen Quellen und werden laufend geprüft."
+      },
+      "stats": {
+        "venues": "Gelistete Venues",
+        "cities": "Aktive Städte",
+        "countries": "Länder",
+        "categories": "Kategorien"
+      },
+      "data": {
+        "title": "Wie die Daten funktionieren",
+        "body": "Die Venueprofile stammen von den Venues selbst und aus öffentlichen Quellen und werden laufend angereichert. Hat sich eine Telefonnummer, ein Trainingsplan oder eine Adresse geändert? Melde es – wir korrigieren."
+      },
+      "owners": {
+        "title": "Du betreibst einen Venue?",
+        "body": "Erstelle dein Profil kostenlos: Trainingszeiten, Preise, Aktivitäten, Fotos. Erreiche neue Mitglieder in deiner Nähe.",
+        "cta": "Meinen Venue hinzufügen"
+      },
+      "practitioners": {
+        "title": "Du suchst ein Gym?",
+        "body": "Filtere nach Kategorie und Stadt, vergleiche Venues und vereinbare ein Probetraining.",
+        "cta": "Mein Venue finden"
+      },
+      "report": {
+        "line": "Fehler in einem Eintrag gefunden? {link}.",
+        "link": "Über die Kontaktseite melden"
+      }
+    },
+    "legal": {
+      "title": "Impressum",
+      "description": "Impressum der Website Directory Template: Herausgeber, Hosting, geistiges Eigentum, personenbezogene Daten und Cookies.",
+      "editor": {
+        "title": "Herausgeber",
+        "body": "Name: Yggdrazil\nRechtsform: __LEGAL_FORM__\nSIREN: __SIREN__\nRCS: __RCS__\nSitz: __REGISTERED_ADDRESS__\nKontakt: contact{'@'}example-directory.com"
+      },
+      "publication": {
+        "title": "Verantwortlich für den Inhalt",
+        "body": "Bertyn Boulikou"
+      },
+      "hosting": {
+        "title": "Hosting",
+        "body": "Die Website wird gehostet von Hetzner Online GmbH.\nAdresse: Industriestraße 25, 91710 Gunzenhausen, Deutschland\nTelefon: +49 9831 5050\nWebsite: https://www.hetzner.com"
+      },
+      "ip": {
+        "title": "Geistiges Eigentum",
+        "body": "Sämtliche redaktionellen Inhalte (Guides, Hubs, Artikel) sind ausschließliches Eigentum von Yggdrazil; jede unbefugte Vervielfältigung ist untersagt. Venuedaten stammen von den Venues selbst und aus öffentlichen Quellen; sie werden ausschließlich zu Informationszwecken angezeigt."
+      },
+      "data": {
+        "title": "Personenbezogene Daten",
+        "body": "Die erhobenen Daten (Benutzerkonto, Sitzung) dienen ausschließlich dem Betrieb des Dienstes; sie werden weder verkauft noch weitergegeben. Gemäß DSGVO hast du das Recht auf Auskunft, Berichtigung, Löschung und Datenübertragbarkeit. Wende dich dazu an contact{'@'}example-directory.com oder nutze die Kontaktseite."
+      },
+      "cookies": {
+        "title": "Cookies",
+        "body": "Die Website verwendet ausschließlich unbedingt erforderliche Sitzungscookies sowie anonymisierte Reichweitenmessung (Cloudflare Web Analytics). Außerdem werden Anzeigen über Google AdSense ausgespielt: Google und seine Partner verwenden Cookies oder Geräte-Kennungen, um personalisierte Anzeigen auf Grundlage Ihres Besuchs dieser und anderer Websites auszuliefern – ausschließlich nach Einholung Ihrer Einwilligung über das Consent-Management-Tool von Google. Sie können Ihre Auswahl jederzeit über dasselbe Tool ändern oder widerrufen und die mit Ihrem Google-Konto verknüpften Anzeigeneinstellungen unter https://adssettings.google.com verwalten.\nWeitere Informationen: https://policies.google.com/technologies/ads"
+      },
+      "disputes": {
+        "title": "Streitfälle",
+        "body": "Diese Website unterliegt französischem Recht. Bei Streitfällen kontaktiere uns bitte zunächst über die Kontaktseite."
+      }
+    }
+  },
+  "dashboard": {
+    "profile": {
+      "title": "Profil",
+      "subtitle": "Verwalte deine persönlichen Daten und dein Passwort.",
+      "save": "Änderungen speichern",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "username": "Benutzername",
+      "usernameHint": "Öffentlich auf deinen Venues sichtbar.",
+      "email": "E-Mail-Adresse",
+      "emailHint": "Für Anmeldung und Benachrichtigungen.",
+      "password": "Passwort",
+      "passwordHint": "Leer lassen, um dein aktuelles Passwort zu behalten.",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "deleteAccount": "Konto löschen",
+      "deleteTitle": "Konto löschen?",
+      "deleteDescription": "Dies löscht dein Konto, deine Venues und deine Bewertungen endgültig. Dies kann nicht rückgängig gemacht werden.",
+      "deleteCancel": "Abbrechen",
+      "deleteConfirm": "Endgültig löschen",
+      "deletedToast": "Konto gelöscht"
+    },
+    "admin": {
+      "title": "Admin",
+      "matchCandidates": "Match-Kandidaten",
+      "enrichVenues": "Venue-Anreicherung"
+    }
+  }
+}

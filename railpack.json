@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": [
+    "python3",
+    "make",
+    "g++"
+  ],
+  "steps": {
+    "build": {
+      "assets": {
+        "fcf-build": "#!/usr/bin/env bash\nset -o pipefail\n# Coolify masks output spans it thinks look like secrets (URLs, long tokens),\n# which swallowed the real rolldown error messages. Scrub those patterns here\n# so the actual error text (e.g. ENOSPC, module paths) reaches the deploy log.\npnpm run build 2>&1 | sed -E 's#https?://[^[:space:]]+##g; s#[A-Za-z0-9+/_-]{40,}#LONG_TOKEN#g'\n"
+      },
+      "commands": [
+        { "path": "/usr/local/bin/fcf-build", "name": "fcf-build", "mode": 493, "customName": "create fcf-build wrapper" },
+        "fcf-build"
+      ],
+      "variables": {
+        "NODE_OPTIONS": "--max-old-space-size=4096 --max-semi-space-size=64"
+      }
+    }
+  },
+  "deploy": {
+    "startCommand": "node .output/server/index.mjs",
+    "aptPackages": [
+      "chromium",
+      "libnss3",
+      "libatk1.0-0",
+      "libatk-bridge2.0-0",
+      "libcups2",
+      "libxkbcommon0",
+      "libxcomposite1",
+      "libxdamage1",
+      "libxrandr2",
+      "libgbm1",
+      "libpango-1.0-0",
+      "libcairo2",
+      "libasound2"
+    ],
+    "variables": {
+      "NODE_ENV": "production",
+      "NODE_OPTIONS": "--max-old-space-size=3072",
+      "NODE_COMPILE_CACHE": "/app/.cache/node-compile",
+      "UV_THREADPOOL_SIZE": "8"
+    }
+  }
+}

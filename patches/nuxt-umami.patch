@@ -1,0 +1,77 @@
+diff --git a/dist/runtime/composables.js b/dist/runtime/composables.js
+--- a/dist/runtime/composables.js
++++ b/dist/runtime/composables.js
+@@ -76,8 +76,7 @@ function getPayload() {
+     ...identifyId ? { id: identifyId } : null,
+     url,
+     title,
+-    referrer: ref,
+-    ...identity ? { id: identity } : null
++    referrer: ref
+   };
+ }
+ ;
+diff --git a/dist/runtime/server/endpoint.js b/dist/runtime/server/endpoint.js
+--- a/dist/runtime/server/endpoint.js
++++ b/dist/runtime/server/endpoint.js
+@@ -3,6 +3,23 @@
+ import { ofetch } from "ofetch";
+ import { getClientIp } from "request-ip";
+ import { parseEventBody } from "../utils.js";
++// Keep in sync with shared/utils/clientIp.ts
++function firstHop(value) {
++  if (!value) return "";
++  return String(value).split(",")[0].trim();
++}
++function isNonPublicIp(ip) {
++  if (ip === "::1") return true;
++  return /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::ffff:127\.|fc00:|fe80:)/i.test(ip);
++}
++function resolveVisitorIp(headers, req) {
++  return firstHop(headers["cf-connecting-ip"])
++    || firstHop(headers["true-client-ip"])
++    || firstHop(headers["x-real-ip"])
++    || firstHop(headers["x-forwarded-for"])
++    || getClientIp(req)
++    || "";
++}
+ export default defineEventHandler(async (event) => {
+   const result = await readValidatedBody(
+     event,
+@@ -18,7 +35,8 @@
+   const headers = getHeaders(event);
+   const origin = headers.origin;
+   const userAgent = headers["user-agent"];
+-  const forwardedFor = headers["x-forwarded-for"] || getClientIp(event.node.req) || "";
++  const visitorIp = resolveVisitorIp(headers, event.node.req);
++  const umamiIp = visitorIp && !isNonPublicIp(visitorIp) ? visitorIp : "";
+   if (!origin || domains && !domains.includes(new URL(origin).hostname)) {
+     throw createError({
+       statusCode: 403,
+@@ -33,15 +51,22 @@
+       headers: {
+         ...cache && { "x-umami-cache": cache },
+         ...userAgent && { "user-agent": userAgent },
+-        // Pass the real client IP to Umami for accurate geo-location.
+-        // Skip in dev (127.0.0.1 confuses Umami's IP parser).
+-        ...!import.meta.dev && forwardedFor && { "x-forwarded-for": forwardedFor }
++        // Umami behind Cloudflare overwrites cf-connecting-ip / cf-ipcountry
++        // with THIS server (Hetzner DE). payload.ip (Umami 2.17+) skips those
++        // CDN geo headers and MaxMind-looks-up the visitor. x-client-ip is a
++        // fallback if CLIENT_IP_HEADER=x-client-ip is set on Umami.
++        ...!import.meta.dev && umamiIp && {
++          "x-forwarded-for": umamiIp,
++          "x-real-ip": umamiIp,
++          "x-client-ip": umamiIp
++        }
+       },
+       body: {
+         type,
+         payload: {
+           website,
+-          ...payload
++          ...payload,
++          ...!import.meta.dev && umamiIp && { ip: umamiIp }
+         }
+       },
+       credentials: "omit"

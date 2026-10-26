@@ -1,0 +1,22 @@
+{
+  "$schema": "https://www.cursor.com/schemas/environment.schema.json",
+  "name": "directory-template",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "pnpm install --ignore-scripts && pnpm rebuild better-sqlite3 && pnpm run postinstall",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "pnpm dev",
+      "description": "Nuxt dev server (http://localhost:3000)"
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}

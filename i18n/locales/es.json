@@ -1,0 +1,480 @@
+{
+  "ads": {
+    "label": "Publicidad"
+  },
+  "breadcrumb": {
+    "items": {
+      "home": {
+        "icon": "heroicons:home",
+        "ariaLabel": "Inicio",
+        "label": "Inicio"
+      },
+      "about": {
+        "icon": "heroicons:information-circle",
+        "ariaLabel": "Acerca de",
+        "label": "Acerca de"
+      },
+      "venues": {
+        "icon": "heroicons:users",
+        "ariaLabel": "Venuees",
+        "label": "Venuees"
+      },
+      "countries": {
+        "icon": "heroicons:globe-alt",
+        "ariaLabel": "Países",
+        "label": "Países"
+      },
+      "categories": {
+        "list": {
+          "icon": "heroicons:collection",
+          "ariaLabel": "Estilos",
+          "label": "Estilos"
+        },
+        "detail": {
+          "icon": "heroicons:sparkles",
+          "ariaLabel": "Estilo {category}",
+          "label": "Estilo {category}"
+        }
+      },
+      "blog": {
+        "icon": "heroicons:pencil-alt",
+        "ariaLabel": "Blog",
+        "label": "Blog"
+      }
+    }
+  },
+  "nav": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "venues": "Venuees",
+    "countries": "Países",
+    "categories": {
+      "list": "Estilos",
+      "detail": "Estilo {category}"
+    },
+    "blog": "Blog",
+    "families": {
+      "striking": "Fitness & Cardio",
+      "grappling": "Fuerza & Movilidad",
+      "traditional": "Disciplinas tradicionales",
+      "fitness": "Fitness & Bienestar"
+    },
+    "addVenue": "Añade tu venue",
+    "mostSearched": "Estilos más buscados",
+    "allStyles": "Todos los estilos",
+    "allStylesDesc": "Todas las categorías de venuees referenciadas.",
+    "explore": "Explorar"
+  },
+  "footer": "Todos los derechos reservados.",
+  "home": {
+    "title": {
+      "pt1": "Descubre tu",
+      "pt2": "Lugar Favorito"
+    },
+    "subTitle": "Descubre venuees locales donde la pasión se encuentra con el progreso. Tu viaje comienza aquí.",
+    "pillarCta": "¿Cómo elegir tu venue?",
+    "search": {
+      "placeholder": "Introduce tu ubicación",
+      "nofound": "No se encontró ningún venue",
+      "cta": "Encuentra tu venue",
+      "text": "Encuentra el venue perfecto para ti"
+    },
+    "stats": {
+      "title": "La Red de Venuees en Europa",
+      "subtitle": "Conectando venuees, miembros y ciudades en toda Europa",
+      "venues": "Venuees registrados",
+      "cities": "Ciudades activas",
+      "countries": "Países",
+      "categories": "Categorías"
+    }
+  },
+  "categories": {
+    "title": "Explorar categorías de venues",
+    "subTitle": "Explora las categorías de tu directorio. Compara enfoques, equipamiento y ambiente para planificar tu próxima sesión.",
+    "cta": "Más información sobre {category}",
+    "details": "Descubre {category}",
+    "meta": {
+      "badge": "Radar de disciplinas",
+      "catalogTitle": "Catálogo",
+      "catalog": "{count} categorías referenciadas",
+      "catalogHint": "Verificados a través del Directory Index",
+      "refreshTitle": "Estado de datos",
+      "refresh": "Actualización semanal",
+      "refreshHint": "Señales frescas de venuees, socios y eventos",
+      "focusTitle": "Ejes de lectura",
+      "focus": "Fitness • Yoga • Spa",
+      "focusHint": "Cambia de perspectiva con un vistazo"
+    },
+    "card": {
+      "descriptionFallback": "Los detalles de esta categoría están siendo curatorados."
+    },
+    "noContent": "El contenido de esta categoría está en preparación.",
+    "cities": {
+      "title": "¿En qué ciudades puedes practicar {category}?",
+      "venue": "Descubre venuees de {category} en {city}",
+      "more": "Ver más",
+      "seeMore": "Ver más",
+      "similar": "Categorías similares"
+    },
+    "hub": {
+      "heading": "{category}: encuentra tu venue",
+      "answerBox": "Encuentra un venue de {category} cerca de ti: gimnasios, clases para principiantes y horarios en {count} ciudades. Compara venuees, comprueba la dirección y contacta directamente. Empieza con una clase de prueba.",
+      "whatTitle": "Qué es el {category}",
+      "guidesTitle": "Guías",
+      "whereTitle": "Dónde practicar {category}",
+      "featuredTitle": "Venuees destacados",
+      "readGuide": "Leer la guía de {category}",
+      "venueCount": "{count} venue | {count} venuees",
+      "venueCtaCount": "{count} venue de {category} listado | {count} venuees de {category} listados",
+      "seoTitle": "{category}: encuentra tu venue",
+      "seoDescription": "{category}: encuentra un venue cerca de ti. {count} ciudades, clases para principiantes, compara gimnasios. Elige y empieza.",
+      "seoKeywords": "{category}, venue de {category}, clases de {category}, gimnasio de {category}, {category} cerca de mí",
+      "faqTitle": "Preguntas frecuentes",
+      "faq": {
+        "where": {
+          "q": "¿Dónde puedo practicar {category} cerca de mí?",
+          "a": "Usa las ciudades de abajo para abrir la lista de venuees de {category} en tu ciudad. Cada ficha muestra la dirección y el contacto."
+        },
+        "price": {
+          "q": "¿Cuánto cuesta un venue de {category}?",
+          "a": "Los precios varían según la ciudad y la tarifa. La mayoría de los venuees ofrece una clase de prueba gratuita o barata. Pregunta las cuotas actuales directamente al venue."
+        },
+        "kids": {
+          "q": "¿Pueden los niños practicar {category}?",
+          "a": "Muchos venuees tienen clases infantiles. Comprueba la edad mínima y los horarios en la ficha, o contacta antes de inscribirte."
+        },
+        "trial": {
+          "q": "¿Cómo reservo una clase de prueba de {category}?",
+          "a": "Abre una ficha de venue, contacta y pide una prueba. La mayoría de las salas ofrecen la primera clase gratis o a bajo precio."
+        },
+        "licence": {
+          "q": "¿Necesito una licencia para practicar {category}?",
+          "a": "A menudo sí, a través de la red a la que pertenece el venue. Pregunta qué incluye la inscripción (licencia, seguro, acceso a clases) antes de comprometerte."
+        }
+      }
+    },
+    "cityPage": {
+      "seoTitle": "{category} en {city}: {count} venuees — horarios y precios",
+      "seoDescription": "Encuentra tu clase de {category} en {city}: {count} venuees y gimnasios, clases para principiantes y avanzados, filtro por barrio, horarios y contacto directo.",
+      "seoKeywords": "{category} {city}, clases de {category} {city}, venue de {category} {city}, centro de {category} {city}, {category} principiantes {city}, directorio {city}",
+      "heading": "{category} en {city}",
+      "subheading": "{count} venue de {category} en {city} | {count} venuees de {category} en {city}",
+      "intro": "{count} venue de {category} en {city}: clases para principiantes, sesiones de tarde y fin de semana. Filtra por barrio y contacta directamente con el venue. | {count} venuees de {category} en {city}: clases para principiantes y avanzados, sesiones de tarde y fin de semana. Filtra por barrio, compara los gimnasios y contacta directamente con el venue.",
+      "introExtra": "¿Dónde practicar {category} en {city}? Los venuees cubren varios barrios: consulta la dirección, los horarios y los precios en cada ficha antes de reservar tu clase de prueba.",
+      "exploreOtherCities": "Explorar {category} en otras ciudades",
+      "backToStyle": "Más información sobre {category}",
+      "pagination": "Página {page} de {total}",
+      "viewVenue": "Ver el venue",
+      "chooseTitle": "Cómo elegir un venue",
+      "chooseLocationTitle": "El barrio",
+      "chooseLocationBody": "Elige un gimnasio cerca de casa o del trabajo. Un trayecto corto se traduce en más entrenamientos.",
+      "chooseVisitTitle": "La visita",
+      "chooseVisitBody": "Contacta con el venue, asiste a una clase y habla con los entrenadores. La ficha muestra la web y el teléfono cuando los tenemos.",
+      "chooseStyleTitle": "La categoría que se ofrece",
+      "chooseStyleBody": "Comprueba que el venue ofrece realmente {category} y no solo una actividad parecida. Las actividades figuran en cada ficha.",
+      "breadcrumb": "{category} en {city}",
+      "venueCount": "{count} venue | {count} venuees",
+      "emptyTitle": "No se encontraron venuees de {category} en {city}",
+      "emptyDescription": "Todavía no tenemos venuees de {category} en {city}. Descubre venuees en otras ciudades.",
+      "emptyFilterTitle": "No hay venuees en este barrio",
+      "emptyFilterDescription": "No hay venuees de {category} para este código postal. Restablece el filtro para ver toda la ciudad.",
+      "resetFilter": "Toda la ciudad",
+      "neighborhoodsTitle": "Barrios",
+      "neighborhoodsHint": "Filtra la lista por código postal.",
+      "allNeighborhoods": "Toda la ciudad",
+      "arrondissement": "Distrito {n}",
+      "arrondissementFirst": "Distrito 1",
+      "otherCitiesTitle": "{category} en las grandes ciudades de Europa",
+      "countryCitiesTitle": "{category} en las ciudades más grandes {prep} {country}",
+      "countryCitiesTitleGeneric": "{category} en las ciudades más grandes del país",
+      "closeLead": "{category} fuera de {city}.",
+      "closeCta": "Guía de {category}",
+      "faqTitle": "Preguntas frecuentes",
+      "faq": {
+        "start": {
+          "q": "¿Puedo empezar {category} a mitad de año en {city}?",
+          "a": "Sí, la mayoría de los venuees aceptan inscripciones todo el año. Confirma los detalles directamente con el venue."
+        },
+        "level": {
+          "q": "¿Hay clases para principiantes o niños?",
+          "a": "Depende del venue. Todavía no tenemos estos datos: abre la ficha y pregunta por niveles y edades."
+        },
+        "licence": {
+          "q": "¿Necesito una licencia para entrenar?",
+          "a": "A menudo sí, a través de la red a la que pertenece el venue."
+        },
+        "area": {
+          "q": "¿Cómo elegir un barrio en {city}?",
+          "a": "Usa el filtro de código postal de arriba. Elige un venue al que puedas llegar con regularidad."
+        },
+        "price": {
+          "q": "¿Cuánto cuesta una clase de {category} en {city}?",
+          "a": "La mayoría de los venuees ofrece una clase de prueba gratuita o barata. Suele costar entre 10 y 20 € por clase, o una cuota mensual según el gimnasio — los precios exactos están en cada ficha."
+        },
+        "equipment": {
+          "q": "¿Qué equipo necesito para empezar {category} en {city}?",
+          "a": "Para las primeras clases basta ropa de deporte en la mayoría de los venuees. El material específico (esterilla, toalla, equipo pequeño) suele prestarse a los principiantes."
+        }
+      },
+      "guideLink": "Descubre nuestra guía completa de {category}",
+      "seoTitleFew": "{category} en {city}: venuees — horarios y precios"
+    },
+    "intro": "Todas las categorías de venues en un directorio: fitness, yoga, spa, musculación, danza, escalada y más de 40 actividades. Compara las categorías y encuentra venuees en tu ciudad."
+  },
+  "countries": {
+    "title": "Países europeos con venuees",
+    "europe": "Países Europeos",
+    "labels": {
+      "continent": "Europa",
+      "cities": "Ciudades activas",
+      "venues": "Venuees registrados",
+      "status": {
+        "open": "Abierto",
+        "soon": "Próximamente"
+      },
+      "notifySoon": "Regístrate para ser notificado cuando lancemos aquí.",
+      "ctaOpen": "Explorar venuees",
+      "ctaSoon": "Seguir progreso"
+    },
+    "cities": {
+      "count": "{count} ciudades con venuees",
+      "venues": "{nbVenues} venuees en total",
+      "soon": "Próximamente..."
+    }
+  },
+  "venues": {
+    "title": "Explorar venuees",
+    "subTitle": "Explora venuees en varias ciudades y países. Encuentra el centro adecuado para tu actividad.",
+    "filter": {
+      "name": "Filtrar",
+      "badge": "Directorio de venuees",
+      "adjustFilters": "Ajustar filtros",
+      "stats": {
+        "tracked": "Venuees registrados",
+        "coverage": "Cobertura de base de datos",
+        "visible": "Visibles ahora",
+        "results": "resultados",
+        "filters": "Filtros activos",
+        "customView": "Vista personalizada",
+        "fullDirectory": "Directorio completo"
+      },
+      "filter": {
+        "tuneSearch": "Ajustar búsqueda",
+        "subtitle": "Combina filtros para refinar tus resultados",
+        "searchPlaceholder": "Buscar nombre del venue...",
+        "apply": "Aplicar",
+        "reset": "Restablecer",
+        "name": "País",
+        "placeholder": "Seleccionar país"
+      },
+      "city": {
+        "name": "Ciudad",
+        "placeholder": "Seleccionar ciudad"
+      },
+      "activities": {
+        "name": "Categorías"
+      }
+    },
+    "info": "Acerca de",
+    "categories": "Categorías",
+    "openingHours": "Horarios de apertura",
+    "website": "Sitio web",
+    "location": "Ubicación",
+    "profile": "Perfil del venue",
+    "lastUpdate": "Última actualización",
+    "status": {
+      "posted": "Abierto",
+      "incoming": "Próximamente"
+    },
+    "tel": "Teléfono",
+    "mapHint": "Haz clic para abrirlo en tu aplicación de mapas",
+    "subscription": "Suscripción",
+    "socialMedia": "Redes sociales",
+    "seoSuffix": "horarios, teléfono y precios"
+  },
+  "blog": {
+    "title": "Últimas publicaciones",
+    "subTitle": "Descubre los últimos artículos del blog",
+    "featured": "Destacado",
+    "allArticles": "Todos los artículos",
+    "readMore": "Leer más",
+    "noPost": "No se encontraron publicaciones",
+    "article": "Artículo",
+    "featuredSubtitle": "Análisis de expertos y guías prácticas para encontrar tu venue"
+  },
+  "common": {
+    "search": "Explorar"
+  },
+  "country_names": {
+    "FR": "Francia",
+    "DE": "Alemania",
+    "GB": "Reino Unido",
+    "ES": "España",
+    "IT": "Italia",
+    "PT": "Portugal",
+    "RE": "Reunión",
+    "AT": "Austria",
+    "CH": "Suiza",
+    "BE": "Bélgica",
+    "NL": "Países Bajos"
+  },
+  "country_prep": {
+    "FR": "en",
+    "DE": "en",
+    "GB": "en",
+    "ES": "en",
+    "IT": "en",
+    "PT": "en",
+    "RE": "en",
+    "AT": "en",
+    "CH": "en",
+    "BE": "en",
+    "NL": "en"
+  },
+  "eu_city_names": {
+    "Paris": "París",
+    "Berlin": "Berlín",
+    "London": "Londres",
+    "Barcelona": "Barcelona",
+    "Rome": "Roma",
+    "Lisbon": "Lisboa"
+  },
+  "auth": {
+    "login": {
+      "noAccount": "¿Aún no tienes cuenta?",
+      "signUp": "Regístrate"
+    }
+  },
+  "affiliate": {
+    "kitTitle": "Equipo para empezar",
+    "nutritionTitle": "Combustible para el entreno",
+    "nutritionEyebrow": "Nutrición",
+    "shopCta": "Comprar",
+    "alsoOn": "También en {partner}",
+    "disclosure": "Enlaces de afiliado. Podemos ganar comisión si compras."
+  },
+  "guide": {
+    "backToHub": "Todo sobre el {category}",
+    "venueCta": "Encuentra un venue de {category}",
+    "venueCtaDirectory": "Encuentra un venue",
+    "browseVenues": "Ver venues",
+    "directoryStyleName": "Venues",
+    "toc": "Índice",
+    "faqTitle": "Preguntas frecuentes",
+    "siblings": "En este silo",
+    "venueCtaCity": "{category} en {city}",
+    "types": {
+      "guide": "Guía",
+      "choisir-venue": "Elegir venue",
+      "ecoles": "Escuelas",
+      "ceintures": "Progresión",
+      "equipement": "Equipamiento",
+      "techniques": "Técnicas"
+    }
+  },
+  "footerNav": {
+    "tagline": "Encuentra tu gimnasio.",
+    "cities": "Ciudades",
+    "allCities": "Todas las ciudades",
+    "guides": "Guías",
+    "guideVenue": "Guía: elegir tu venue",
+    "comparatif": "¿Cómo elegir tu venue?",
+    "contact": "Contacto",
+    "legal": "Aviso legal",
+    "language": "Idioma"
+  },
+  "pages": {
+    "about": {
+      "title": "Acerca de",
+      "description": "Directory Template recopila venuees en Europa. Encuentra un centro, compara categorías, empieza una prueba.",
+      "mission": {
+        "p1": "Directory Template recopila venuees en Europa: fitness, yoga, spa y mucho más. Encuentra un centro cerca de ti, compara categorías, empieza una prueba.",
+        "p2": "El sitio está editado por Yggdrazil. Las fichas de los venuees provienen de los propios venuees y de fuentes públicas, y se verifican continuamente."
+      },
+      "stats": {
+        "venues": "Venuees registrados",
+        "cities": "Ciudades activas",
+        "countries": "Países",
+        "categories": "Categorías"
+      },
+      "data": {
+        "title": "Cómo funcionan los datos",
+        "body": "Las fichas provienen de los propios venuees y de fuentes públicas, y se enriquecen continuamente. ¿Ha cambiado un teléfono, un horario o una dirección? Informalo y lo corregimos."
+      },
+      "owners": {
+        "title": "¿Gestionas un venue?",
+        "body": "Crea tu ficha gratis: horarios, precios, actividades, fotos. Llega a nuevos miembros cerca de ti.",
+        "cta": "Añadir mi venue"
+      },
+      "practitioners": {
+        "title": "¿Buscas un gimnasio?",
+        "body": "Filtra por categoría y ciudad, compara venuees y reserva una prueba.",
+        "cta": "Encontrar mi venue"
+      },
+      "report": {
+        "line": "¿Un error en una ficha? {link}.",
+        "link": "Infórmalo a través de la página de contacto"
+      }
+    },
+    "legal": {
+      "title": "Aviso legal",
+      "description": "Aviso legal del sitio web Directory Template: editor, alojamiento, propiedad intelectual, datos personales y cookies.",
+      "editor": {
+        "title": "Editor",
+        "body": "Nombre: Yggdrazil\nForma jurídica: __LEGAL_FORM__\nSIREN: __SIREN__\nRCS: __RCS__\nDomicilio social: __REGISTERED_ADDRESS__\nContacto: contact{'@'}example-directory.com"
+      },
+      "publication": {
+        "title": "Director de la publicación",
+        "body": "Bertyn Boulikou"
+      },
+      "hosting": {
+        "title": "Alojamiento",
+        "body": "El sitio está alojado por Hetzner Online GmbH.\nDirección: Industriestraße 25, 91710 Gunzenhausen, Alemania\nTeléfono: +49 9831 5050\nSitio web: https://www.hetzner.com"
+      },
+      "ip": {
+        "title": "Propiedad intelectual",
+        "body": "La totalidad de los contenidos editoriales (guías, hubs, artículos) es propiedad exclusiva de Yggdrazil; queda prohibida cualquier reproducción no autorizada. Los datos de los venuees provienen de los propios venuees y de fuentes públicas; se muestran con fines informativos."
+      },
+      "data": {
+        "title": "Datos personales",
+        "body": "Los datos recopilados (cuenta de usuario, sesión) se utilizan únicamente para el funcionamiento del servicio; no se venden ni se ceden. Conforme al RGPD, tienes derecho de acceso, rectificación, supresión y portabilidad de tus datos. Para ejercerlos, escribe a contact{'@'}example-directory.com o utiliza la página de contacto."
+      },
+      "cookies": {
+        "title": "Cookies",
+        "body": "El sitio utiliza cookies de sesión estrictamente necesarias y mediciones de audiencia anonimizadas (Cloudflare Web Analytics). También muestra anuncios servidos por Google a través de AdSense: Google y sus socios utilizan cookies o identificadores de dispositivo para mostrar anuncios personalizados según tu visita a este y otros sitios, y solo después de haber recogido tu consentimiento mediante la herramienta de gestión de consentimiento de Google. Puedes cambiar o retirar tu elección en cualquier momento desde esa misma herramienta, y gestionar la configuración de anuncios vinculada a tu cuenta de Google en https://adssettings.google.com.\nMás información: https://policies.google.com/technologies/ads"
+      },
+      "disputes": {
+        "title": "Litigios",
+        "body": "Este sitio web se rige por la ley francesa. En caso de litigio, contacta con nosotros primero a través de la página de contacto."
+      }
+    }
+  },
+  "dashboard": {
+    "profile": {
+      "title": "Perfil",
+      "subtitle": "Gestiona tu información personal y tu contraseña.",
+      "save": "Guardar cambios",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "username": "Nombre de usuario",
+      "usernameHint": "Visible públicamente en tus venues.",
+      "email": "Correo electrónico",
+      "emailHint": "Se usa para iniciar sesión y para notificaciones.",
+      "password": "Contraseña",
+      "passwordHint": "Déjalo vacío para conservar tu contraseña actual.",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "deleteAccount": "Eliminar cuenta",
+      "deleteTitle": "¿Eliminar tu cuenta?",
+      "deleteDescription": "Esto elimina permanentemente tu cuenta, tus venues y tus reseñas. No se puede deshacer.",
+      "deleteCancel": "Cancelar",
+      "deleteConfirm": "Eliminar permanentemente",
+      "deletedToast": "Cuenta eliminada"
+    },
+    "admin": {
+      "title": "Admin",
+      "matchCandidates": "Candidatos de matching",
+      "enrichVenues": "Enriquecimiento de venues"
+    }
+  }
+}

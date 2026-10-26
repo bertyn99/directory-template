@@ -1,0 +1,12 @@
+diff --git a/dist/csrf.node.mjs b/dist/csrf.node.mjs
+index f5b9addcfcd6ff421a8330fe598141ab3024d9a8..4b9bce0a6ab8464921842da767728ab28a1bd886 100644
+--- a/dist/csrf.node.mjs
++++ b/dist/csrf.node.mjs
+@@ -33,6 +33,6 @@ const verify = (secret, token, encryptSecret, encryptAlgorithm) => {
+   return Promise.resolve(decrypted === secret);
+ };
+ const randomSecret = () => randomUUID();
+-const randomEncryptSecret = () => randomBytes(22).toString("base64");
++const randomEncryptSecret = () => randomBytes(32).toString("base64");
+ 
+ export { create, defaultEncryptAlgorithm, importEncryptSecret, randomEncryptSecret, randomSecret, verify };

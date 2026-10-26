@@ -1,0 +1,163 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@source "../../../content/**/*";
+
+/* Directory Template — NEUTRAL base theme.
+   The template ships no brand palette: `primary`, `secondary` and `neutral`
+   resolve to Tailwind's built-in `slate` scale via app/app.config.ts
+   (`ui.colors`). Nuxt UI exposes them as CSS variables (--ui-primary,
+   --ui-secondary, …) consumed by every component, so a niche app re-themes
+   WITHOUT touching component code — see docs/design-system.md. Two strategies:
+
+     1. Point `ui.colors.primary` at another built-in palette (zero CSS changes).
+     2. Define a custom palette and point `ui.colors.primary` at its name:
+
+        @theme static {
+            --color-brand-50: #f0f9ff;
+            --color-brand-500: #0284c7;   <- consumed as --ui-primary (light)
+            --color-brand-600: #0369a1;   <- consumed as --ui-primary (dark)
+            --color-brand-950: #082f49;
+        }
+        // app/app.config.ts → ui.colors.primary: "brand"
+
+   The `static` modifier is REQUIRED for custom palettes: these vars are
+   consumed by @nuxt/ui's runtime inline style (--ui-color-primary-* refs),
+   not by Tailwind utilities — without it v4 tree-shakes the definitions out
+   of the compiled CSS. Custom palettes should keep their 500/600 shades at
+   ≥4.5:1 contrast on white (WCAG AA) for `text-primary` and white-on-solid
+   buttons. */
+@theme {
+    /* Font Families - Registered for Tailwind utilities.
+       The base template ships a single family: Manrope serves both body and
+       display roles (headings fall back to it). Niche apps override
+       --font-display with their own heading face; every `font-display`
+       utility and component slot picks the change up automatically. */
+    --font-sans: "Manrope", sans-serif;
+    --font-display: "Manrope", sans-serif;
+}
+
+/* Chart series: primary (--ui-chart-1) is wired by @nuxt/ui from the primary
+   palette. Second series: a neutral gray so admin charts stay within the
+   base palette. */
+:root {
+    --ui-chart-2: #475569;
+}
+
+.dark {
+    --ui-chart-2: #94a3b8;
+}
+
+/* WCAG AA Color Contrast Overrides */
+/* Default slate neutral: text-dimmed (neutral-400) has only 2.8:1 contrast on white — fails WCAG AA
+   Override to neutral-500 (+1 step) for ≥4.5:1 minimum contrast ratio */
+@layer theme {
+  :root, .light {
+    --ui-text-dimmed: var(--ui-color-neutral-500);
+    --ui-text-muted: var(--ui-color-neutral-600);
+  }
+}
+
+/* Typography System (Tailwind v4) */
+@layer base {
+    /* Base: Manrope - Regular (400) */
+    body {
+        @apply font-sans font-normal leading-normal text-default;
+    }
+
+    /* Headings: display face — Bold (700), Uppercase (base template: Manrope) */
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-display font-bold uppercase leading-tight tracking-tight text-default;
+    }
+
+    /* Heading Sizes */
+    h1 {
+        @apply text-4xl leading-tight;
+    }
+
+    h2 {
+        @apply text-3xl leading-tight;
+    }
+
+    h3 {
+        @apply text-2xl leading-snug;
+    }
+
+    h4 {
+        @apply text-xl leading-snug;
+    }
+
+    h5 {
+        @apply text-lg leading-normal;
+    }
+
+    h6 {
+        @apply text-base leading-normal;
+    }
+
+    /* Paragraphs: Manrope */
+    p {
+        @apply font-sans font-normal leading-relaxed;
+    }
+
+    /* Medium weight for emphasis */
+    .font-medium,
+    strong,
+    b {
+        @apply font-medium;
+    }
+
+    /* Bold weight for headings */
+    .font-bold,
+    .font-semibold {
+        @apply font-bold;
+    }
+
+    /* Utility Classes */
+    .font-display {
+        @apply font-display font-bold uppercase;
+    }
+
+    .font-body {
+        @apply font-sans font-normal;
+    }
+
+    /* Nuxt UI Component Typography Overrides */
+    /* Ensure buttons use display font for uppercase text */
+    [class*="UButton"] {
+        @apply font-display font-bold tracking-wide;
+    }
+
+    /* Cards should use body font */
+    [class*="UCard"] {
+        @apply font-sans;
+    }
+
+    /* Badges use display font for uppercase */
+    [class*="UBadge"] {
+        @apply font-display font-bold tracking-wide;
+    }
+
+    /* Prose Typography (for blog content) */
+    .prose {
+        @apply font-sans font-normal leading-relaxed;
+    }
+
+    .prose h1,
+    .prose h2,
+    .prose h3,
+    .prose h4,
+    .prose h5,
+    .prose h6 {
+        @apply font-display font-bold uppercase leading-tight tracking-tight;
+    }
+
+    .prose p {
+        @apply font-sans font-normal leading-relaxed;
+    }
+
+    .prose strong,
+    .prose b {
+        @apply font-medium;
+    }
+}

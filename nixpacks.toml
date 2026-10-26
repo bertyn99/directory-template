@@ -1,0 +1,49 @@
+[phases.setup]
+nixPkgs = [
+  "nodejs",
+  "pnpm",
+  "chromium",
+  "nss",
+  "atk",
+  "cups",
+  "dbus",
+  "libxkbcommon",
+  "xorg.libXcomposite",
+  "xorg.libXdamage",
+  "xorg.libXrandr",
+  "xorg.libXScrnSaver",
+  "mesa",
+  "pango",
+  "cairo",
+  "alsa-lib",
+]
+
+
+[phases.install]
+cmds = [
+  "pnpm install --ignore-scripts",
+  "pnpm rebuild better-sqlite3",
+  "pnpm run postinstall"
+]
+
+[phases.build]
+cmds = [
+  "pnpm run build"
+]
+
+[start]
+cmd = "node .output/server/index.mjs"
+
+[variables]
+NODE_ENV = "production"
+NODE_VERSION = "22.20"
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "1"
+NODE_OPTIONS = "--max-old-space-size=4096 --experimental-require-module"
+
+# For improved caching of dependencies
+[phases.install.cache]
+directories = [
+  ".pnpm-store",
+  "node_modules/.pnpm"
+]

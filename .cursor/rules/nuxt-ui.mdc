@@ -1,0 +1,67 @@
+---
+description: Guidelines for using Nuxt UI MCP tools to get up-to-date component documentation and examples
+globs: **/*.vue
+alwaysApply: true
+---
+
+- **Using Nuxt UI MCP Information:**
+  - When working with Nuxt UI components, use MCP tools to get up-to-date documentation
+  - Always check MCP documentation before implementing or modifying Nuxt UI components
+  - Reference: [design-rules.mdc](mdc:.cursor/rules/design-rules.mdc) for design system guidelines
+
+- **Available MCP Tools for Nuxt UI:**
+  - `mcp_nuxt-ui_list_components` - List all available Nuxt UI components
+  - `mcp_nuxt-ui_get_component` - Get detailed component documentation
+  - `mcp_nuxt-ui_get_component_metadata` - Get component props, slots, and events
+  - `mcp_nuxt-ui_list_composables` - List available composables
+  - `mcp_nuxt-ui_get_documentation_page` - Get documentation by URL path
+  - `mcp_nuxt-ui_list_examples` - Browse component examples
+  - `mcp_nuxt-ui_get_example` - Get specific example implementation code
+  - `mcp_nuxt-ui_search_components_by_category` - Search components by category or text
+
+- **When to Use MCP Tools:**
+  - **Before implementing a new component** - Check available props, slots, and events
+  - **When unsure about component API** - Get exact prop names, types, and default values
+  - **To find examples** - See how components are used in practice
+  - **To verify component capabilities** - Check what features and variants are available
+  - **When debugging component issues** - Verify correct prop usage and available options
+  - **To discover alternative components** - Find components that might better fit the use case
+
+- **Recommended Workflow:**
+  ```vue
+  <!-- 1. List components to find what's available -->
+  <!-- Use: mcp_nuxt-ui_list_components -->
+  
+  <!-- 2. Get specific component details -->
+  <!-- Use: mcp_nuxt-ui_get_component with componentName: "UButton" -->
+  
+  <!-- 3. Get component metadata for props/slots -->
+  <!-- Use: mcp_nuxt-ui_get_component_metadata with componentName: "UCard" -->
+  
+  <!-- 4. Check examples for implementation patterns -->
+  <!-- Use: mcp_nuxt-ui_get_example with exampleName -->
+  
+  <!-- 5. Implement component following MCP documentation -->
+  <UButton 
+    color="primary" 
+    variant="solid"
+    size="md"
+  >
+    Action
+  </UButton>
+  ```
+
+- **Component Implementation Best Practices:**
+  - Always verify prop names match MCP documentation exactly
+  - Check available variants and colors before using custom styling
+  - Use component slots as documented in MCP metadata
+  - Follow examples from MCP when implementing complex component patterns
+  - Reference MCP documentation in code comments when using non-standard props
+
+- **Common Use Cases:**
+  - **Buttons:** Check available colors, variants, sizes, and icon support
+  - **Cards:** Verify header/footer slots and styling options
+  - **Forms:** Check form field components, validation props, and input types
+  - **Navigation:** Discover breadcrumb, menu, and navigation components
+  - **Layout:** Find container, grid, and layout components
+  - **Feedback:** Check alert, notification, and modal components

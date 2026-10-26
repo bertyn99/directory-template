@@ -1,0 +1,50 @@
+---
+name: nuxt-server-endpoint
+description: Nuxt server endpoint rules with Drizzle ORM and RBAC
+globs: server/api/**, server/**, app/**
+---
+# nuxt-server-endpoint.mdc
+
+Purpose
+- Standardize server endpoint structure, error handling, and RBAC checks for routes using Drizzle ORM.
+
+Motivation
+- Consistent endpoints reduce security bugs and make access control auditable.
+
+Project structure
+- Place endpoints under `server/api/` as route files (e.g., `server/api/users.get.ts`).
+- Keep service logic in `server/services/` and database access in `server/database/queries/`.
+- Define database schemas and tables in `server/database/schemas/`.
+
+File conventions
+- Export default handlers using `defineEventHandler`.
+- Validate and parse request bodies using Zod or a shared input schema helper before business logic.
+- Return structured error objects `{ status: number, error: string, details?: any }`.
+
+RBAC (Role-Based Access Control)
+- Use a centralized `requireRole(event, roles)` helper to assert role membership early.
+- Prefer declarative role checks at the top of the handler:
+```
+// server/api/projects.get.ts
+export default defineEventHandler(async (event) => {
+  requireRole(event, ['admin', 'manager'])
+  const projects = await getProjectsForUser(event)
+  return projects
+})
+``` 
+- Store user roles on the session/jwt token and map them to application roles in middleware.
+
+Database access (Drizzle ORM)
+- Use typed query functions in `server/database/queries/` organized by domain (e.g., `queries/auth.ts`, `queries/user.ts`).
+- Import schemas and tables from `server/database/schemas/` when needed.
+- Avoid raw SQL in route handlers; use query functions from `server/database/queries/` for all database operations.
+- Use transactions for multi-step writes and return optimistic errors for conflict cases.
+- Query functions should use `useDrizzle()` to access the database instance.
+
+Error handling
+- Catch unexpected errors at the top-level and log with context, but return minimal messages to clients.
+- Map known error types to appropriate HTTP status codes (e.g., 400 for validation, 403 for auth, 409 for conflicts).
+
+Testing
+- Unit-test services independently from route handlers.
+- Use integration tests for critical endpoints with a test database (SQLite in-memory or Docker). 

@@ -1,0 +1,38 @@
+packages:
+  - '.'
+nodeLinker: hoisted
+dedupeInjectedDeps: false
+shamefullyHoist: true
+
+onlyBuiltDependencies:
+  - sharp
+  - better-sqlite3
+
+overrides:
+  sharp: 0.33.4
+  # nuxt-schema-org@6.3.0 imports hasOwn from unhead/utils (added in 3.4)
+  unhead: 3.4.0
+  "@unhead/vue": 3.4.0
+  "@unhead/schema-org": 3.4.0
+  drizzle-orm: 1.0.0-rc.4
+patchedDependencies:
+  uncsrf: patches/uncsrf.patch
+  # bgervan/nuxt-umami v3.4.0-bg.2 — dead `identity` in getPayload() + cloak geo:
+  # stamp visitor cf-connecting-ip as payload.ip so Umami does not geolocate the Hetzner VPS.
+  "nuxt-umami": patches/nuxt-umami.patch
+
+allowBuilds:
+  "@parcel/watcher": false
+  "@tailwindcss/oxide": false
+  sharp: true
+  better-sqlite3: true
+  esbuild: false
+  maplibre-gl: false
+  unrs-resolver: false
+  vue-demi: false
+
+# 4.12.0 shipped 2026-10-15; allow it through the release-age gate.
+# @nuxt/fonts 1.1.0 shipped 2026-10-22; explicit upgrade request.
+minimumReleaseAgeExclude:
+  - '@nuxt/ui@4.12.0'
+  - '@nuxt/fonts@1.1.0'

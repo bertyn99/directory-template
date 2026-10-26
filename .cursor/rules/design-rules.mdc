@@ -1,0 +1,128 @@
+---
+description: Design system rules for the Directory Template - neutral base theme using Nuxt UI and Tailwind CSS. Each niche app re-themes via CSS variables; these rules are the template invariants.
+alwaysApply: true
+---
+
+- **Brand Identity: NEUTRAL BASE — design-neutral template**
+  - The template ships NO brand palette and NO display font. Swiss Editorial precision, high-key surfaces, stark contrast, technical typography
+  - Each niche app injects its identity at instantiation via CSS variables + `app/app.config.ts` (`ui.colors`) — NEVER by editing component code
+  - Reference: [design-system.md](mdc:docs/design-system.md)
+
+- **Color Palette — Neutral Base, WCAG AA Required**
+  - **Base roles (all `slate`, Tailwind built-in, wired in `app/app.config.ts`):**
+    - Primary (`slate`): primary actions, CTAs, active states, hover borders
+    - Secondary (`slate`): secondary accents (footer band, trust indicators)
+    - Neutral (`slate`): surfaces, borders, text
+  - **Text contrast overrides** (in `main.css`): `text-dimmed`/`text-muted` bumped to neutral-500/600 — default neutral-400 fails WCAG AA (2.8:1)
+  - **Re-theming (niche apps):** either point `ui.colors.primary` at another built-in palette, or define a custom `@theme static { --color-brand-*: … }` scale in `app/assets/css/main.css` and set `primary: "brand"` — see docs/design-system.md
+    - `@theme static` is REQUIRED for custom palettes (consumed by Nuxt UI runtime styles; plain `@theme` gets tree-shaken)
+    - 500/600 shades must hold ≥4.5:1 on white (WCAG AA) for text-primary and white-on-solid buttons
+  - **Implementation:** Nuxt UI CSS variables in [main.css](mdc:app/assets/css/main.css)
+  - **Usage in Components (never raw hex):**
+    - Primary actions: `bg-primary`, `text-primary`, `border-primary`
+    - Secondary accents: `bg-secondary`, `text-secondary`
+    - Text: `text-default`, `text-muted`, `text-toned`
+    - Backgrounds: `bg-default`, `bg-muted`, `bg-elevated`
+    - Borders: `border-default`, `border-muted`, `border-accented`
+
+- **Typography System**
+  - **Base:** single family — Manrope (self-hosted). Body Regular (400)/Medium (500); headings Bold (700), UPPERCASE
+  - **`--font-display` falls back to Manrope.** Niche apps swap their display face via that one variable (plus `fonts.families` in nuxt.config) — headings, buttons, badges and prose pick it up automatically
+  - **Implementation:** configure in [main.css](mdc:app/assets/css/main.css)
+    ```css
+    /* ✅ DO: Use theme variables for fonts */
+    @theme {
+      --font-sans: "Manrope", sans-serif;
+      --font-display: "Manrope", sans-serif; /* niche app: override with its display face */
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    ```
+  - The uppercase heading treatment and the h1 `text-4xl` → h6 `text-base` size scale are template invariants — re-theme the face, not the scale
+
+- **UI Component Styling — Sharp & Editorial (TEMPLATE INVARIANTS)**
+  - **Corner radius:** Sharp/Micro (2px) - Use `rounded-sm` utility class
+    ```vue
+    <!-- ✅ DO: Sharp corners with rounded-sm -->
+    <UCard class="rounded-sm border border-default">
+
+    <!-- ❌ DON'T: Pill shapes or large radius -->
+    <UCard class="rounded-full">
+    <UCard class="rounded-lg">
+    ```
+  - **Depth:** Flat with borders, NO drop shadows
+    ```vue
+    <!-- ✅ DO: Use borders instead of shadows -->
+    <UCard class="border border-default bg-default">
+
+    <!-- ❌ DON'T: Use drop shadows -->
+    <UCard class="shadow-lg">
+    ```
+  - **Hover States:** Use `border-primary` for active targets
+    ```vue
+    <!-- ✅ DO: High contrast hover with primary border -->
+    <UCard class="border border-default hover:border-primary">
+    ```
+
+- **Component-Specific Rules**
+  - **Buttons:**
+    ```vue
+    <!-- ✅ DO: Solid rectangles, sharp corners, no gradients -->
+    <UButton class="rounded-sm bg-primary text-white">
+    <UButton class="rounded-sm bg-secondary text-white">
+
+    <!-- ❌ DON'T: Gradients, pill shapes, soft shadows -->
+    <UButton class="rounded-full bg-gradient-to-r">
+    ```
+  - **Cards:**
+    ```vue
+    <!-- ✅ DO: White background, border, sharp corners -->
+    <UCard class="bg-default border border-default rounded-sm">
+
+    <!-- Structure: Image top, content bottom -->
+    ```
+  - **Inputs:**
+    ```vue
+    <!-- ✅ DO: Sharp edges, clear focus ring -->
+    <UInput class="rounded-sm focus:ring-primary border-default focus:border-primary">
+    ```
+  - **Text Colors:**
+    - Primary text: `text-default`
+    - Secondary text: `text-muted`
+    - Dimmed text: `text-dimmed`
+    - Highlighted text: `text-highlighted`
+  - **Backgrounds:**
+    - Main: `bg-default` (Pure White)
+    - Cards/sections: `bg-muted`
+    - Elevated: `bg-elevated`
+  - **Icons:** generic venue/location icons only in the template (`i-lucide-map-pin`, `i-lucide-building-2`, `i-lucide-activity`, `i-lucide-dumbbell`…). Per-niche category→icon mapping is config territory — do not extend the keyword map in components
+
+- **UX & Interaction Guidelines**
+  - **Motion:** "Snap" transitions - Fast (150ms)
+  - **Feedback:** High contrast states
+    - Loading: Pulse skeletons (neutral tones)
+    - Success: Sharp Green checkmarks (semantic, unbranded)
+  - **Tone:** Direct, action-oriented, concise — generic directory voice, no niche jargon
+    ```vue
+    <!-- ✅ DO: Direct, action-oriented -->
+    <h1>Find your venue.</h1>
+
+    <!-- ❌ DON'T: Verbose, passive -->
+    <h1>Please search for a venue here.</h1>
+    ```
+
+- **Sample Assets**
+  - Images under `public/img/` are replaceable placeholders with neutral names (`hero-showcase.png`, `venue-fallback.png`…) — components reference the names, niche apps swap the files
+
+- **Implementation Checklist**
+  - All components must use Nuxt UI with CSS variables — no raw hex in components
+  - All corners must be sharp (2px max) - use `rounded-sm`
+  - No drop shadows - use borders instead
+  - Hover states use `border-primary` for high contrast
+  - Typography: Manrope base (`--font-display` = Manrope fallback); niche apps override the variable, never component markup
+  - Colors: neutral `slate` base; niche apps re-theme via `ui.colors` + `@theme static`, never via component edits
+  - Tone is direct and action-oriented, never verbose
