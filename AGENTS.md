@@ -1,6 +1,6 @@
 # Directory Template — AGENTS.md
 
-**Updated:** 2026-10-26 | **Origin:** extracted by subtraction from `~/project/yggdraz/fight-club-finder` (FCF, martial-arts clubs directory)
+**Updated:** 2026-10-27 | **Origin:** extracted by subtraction from `~/project/yggdraz/fight-club-finder` (FCF, martial-arts clubs directory)
 
 ## Project Overview
 
@@ -16,24 +16,24 @@ Single config file everything reads: `nuxt.config.ts` (site/i18n/SEO/schema.org/
 | Field | Purpose |
 |---|---|
 | `name`, `url`, `description` | Brand name, canonical origin (no trailing slash), per-locale one-sentence pitch (meta description + schema.org identity) |
-| `defaultLocale`, `locales` | Default locale served WITHOUT URL prefix (`prefix_except_default`); fr MUST stay in the list. Codes must exist in `I18N_LOCALE_META` (nuxt.config.ts) with an `i18n/locales/<code>.json` file |
-| `entity` | Display vocabulary for the two core entities: `venue` (the listed item) and `category` (its grouping), per locale |
-| `taxonomy.categories` | Category taxonomy (slug + per-locale labels). ⚠ `shared/activities.ts` is neutralized to the same 3 sample slugs — replace BOTH together |
-| `affiliates` | `disclosure` (mandatory legal string, mirrors i18n key `affiliate.disclosure`), `partners` (per-locale program map; Decathlon ships as EXAMPLE), `products` (sample gear cards), `kit` (ids rendered by `::equipment-kit`) |
+| `defaultLocale`, `locales` | Default locale served WITHOUT URL prefix (`prefix_except_default`); fr MUST stay in the list. Codes must exist in `SHIPPED_LOCALES` (`shared/locale-meta.ts`) with an `i18n/locales/<code>.json` file and a `content/<code>/` directory |
+| `taxonomy.*` | Category taxonomy — SINGLE SOURCE for the editorial catalog (categories with slug/name/labels/localeSlugs/legacySlugs, aliases, alias-only + junk slugs, families, mostSearched, seedIds). `shared/activities.ts` derives everything from it — never edit that file by hand |
+| `affiliates` | `partners` (per-locale program map; Decathlon ships as EXAMPLE), `products` (sample gear cards), `kit` (ids rendered by `::equipment-kit`). The mandatory affiliate disclosure is NOT configured here — locale files (i18n key `affiliate.disclosure`) are its only source |
+| `billing` | Stripe plan vocabulary: `freePlanId` + `plans[]` (`id`, `title`, `description`, `monthly`, `yearly`, `highlight`, `features`). Plan ids single-source the session `plan` type (`shared/types/auth.d.ts`), the fallback pricing table (`app/composables/useStripe.ts`) and the seeded dev DB (`server/db/seed.ts`). Create Stripe products with exactly these ids and price lookup keys `${id}_monthly` / `${id}_yearly` |
 | `ads.adsense` | `client` + `slots` (`home`, `categoriesHub`, `categoryDetail`); env overrides; empty ⇒ nothing renders |
-| `content.siloTopics` | Per-niche editorial clusters (placeholder — template ships none) |
-| `scraping.sources` | Source ids — MUST match adapters' `meta.id` in `server/services/scraping/sources/registry.ts` (registry does not import the config yet; keep in sync by hand) |
+| `content.siloSpokes` | Per-niche silo spoke URL segments (labels live in i18n `guide.types.<slug>`; sample values: `guide`/`choisir-venue`/`comparer`/`tarifs`/`equipement`/`techniques` — neutral placeholder vocabulary) |
+| `scraping.sources` | Ids of the ACTIVE adapters — `server/services/scraping/sources/registry.ts` validates them at boot (unknown id ⇒ error) and `getAllSources()` returns exactly this subset; adapter ids are mirrored in `sources/ids.ts` for the unit contract test |
 | `scraping.seedCities` | Cities featured with banner images (`/img/cities/<slug>.jpg`) |
 
 ### Instantiation workflow
 
 1. Copy `template/` to the new app repo.
-2. Edit `directory.config.ts` (all fields above).
-3. Neutralize/replace `i18n/locales/` files — fr+en are verified template copy; **de/es/it/pt are unverified machine drafts** with partial key parity (~400 vs ~766 keys) — see `i18n/README.md`.
-4. Replace the sample catalog (`shared/activities.ts`), the category taxonomy (`directory.config.ts`), and the seed cities. ⚠ `shared/silo.ts` still hardcodes the FCF spoke-type vocabulary (`guide`/`choisir-venue`/`ecoles`/`ceintures`/`equipement`/`techniques` — French slugs); adjust per niche.
-5. Add niche scraping sources in `server/services/scraping/sources/` + registry, and extend the CRM/venv automation — easy.
-6. Create Stripe products matching the `premium` / `premium_pro` plan ids (plan ids hardcoded in `app/composables/useStripe.ts` and `shared/types/auth.d.ts` — grep for them when renaming).
-7. Replace the sample content articles (`content/fr/blog/`, `content/en/blog/`, `content/fr/category-guides/`, `content/en/category-guides/`).
+2. Edit `directory.config.ts` — all fields in the table above (brand + locales, `taxonomy.*`, affiliates, billing, ads, `content.siloSpokes`, scraping). This is the ONLY engine-facing edit; everything downstream (catalog, nav, collections, sitemap, silo routes) derives from it.
+3. Neutralize/replace `i18n/locales/` and the sample content — fr+en are verified template copy; **de/es/it/pt are unverified machine drafts** with partial key parity (~400 vs ~766 keys) — see `i18n/README.md`. Replace the sample articles (`content/fr/blog/`, `content/en/blog/`, `content/fr/category-guides/`, `content/en/category-guides/`); if you rename a spoke in `content.siloSpokes`, update the i18n `guide.types.<slug>` keys and the content frontmatter `type:` values to match.
+4. Add niche scraping sources in `server/services/scraping/sources/` + registry (mirror the id in `sources/ids.ts`), list the id in `directory.config.ts` `scraping.sources` (registry validates it at boot), and extend the CRM/venv automation — easy.
+5. Create Stripe products matching the `billing.plans[].id` plan ids (configured in `directory.config.ts` `billing` — the single source; price lookup keys `${id}_monthly` / `${id}_yearly`).
+
+Done — zero engine-code edits (components, composables, server layer, shared/ engines stay untouched). `pnpm test:unit` runs the instantiation contract test and fails fast on incoherent config.
 
 ## Commands
 
@@ -82,7 +82,7 @@ Node 24 (`.nvmrc`/engines), pnpm ≥11 (`packageManager: pnpm@11.8.0`).
 | Task | Location | Notes |
 |------|----------|-------|
 | Instantiate a niche | `directory.config.ts` | Then follow the 7-step workflow above |
-| Add a page | `app/pages/` | Pages: `/` home, `/venues` + `/venues/[slug]`, `/categories` hub + `/categories/[category]` (+ `/guide`, `/choisir-venue`, `/ecoles`, `/ceintures`, `/equipement`, `/techniques` silo spokes + `/[cities]` category×city), `/country/**` location browsing, `/blog` + `/blog/[slug]`, `/contact`, `/about`, `/legal`, `/auth/*`, `/dashboard/**` (auth middleware), `/dashboard/admin/match-candidates` |
+| Add a page | `app/pages/` | Pages: `/` home, `/venues` + `/venues/[slug]`, `/categories` hub + `/categories/[category]` + `/categories/[category]/[cities]` — ONE dispatch route serving BOTH the silo spokes (config data: `directoryConfig.content.siloSpokes`, e.g. `/guide`, `/choisir-venue`, `/comparer`, `/tarifs`, `/equipement`, `/techniques`) and the category×city pages — plus `/country/**` location browsing, `/blog` + `/blog/[slug]`, `/contact`, `/about`, `/legal`, `/auth/*`, `/dashboard/**` (auth middleware), `/dashboard/admin/match-candidates` |
 | Add a component | `app/components/{domain}/` | Domain: base, venue, categories, section, content, affiliate, ads, auth, blog, sidebar, modal, franchise, dashboard, admin, OgImage, prose |
 | Add a composable | `app/composables/` | Pattern: `useXxx.ts`, reactive state + methods |
 | Add an API route | `server/api/{domain}/` | File-based: `index.get.ts`, `[slug].ts` |
@@ -98,7 +98,7 @@ Node 24 (`.nvmrc`/engines), pnpm ≥11 (`packageManager: pnpm@11.8.0`).
 
 ### Frontend (`app/`)
 
-- **Pages** (35, listed above): public directory surfaces (`/venues`, `/categories` hub/detail/category×city, `/country/**`), blog, silo spokes under `/categories/[category]/<type>`, dashboard + admin.
+- **Pages** (29, listed above): public directory surfaces (`/venues`, `/categories` hub/detail + silo spokes/category×city through the `[cities].vue` dispatch route, `/country/**`), blog, dashboard + admin.
 - **Middleware**: `auth.ts`, `admin.ts`, `redirect-category-slugs.global.ts` (legacy slug redirects).
 - **Layouts**: `default.vue`, `dashboard.vue`, `auth.vue`, `error.vue`.
 - **Composables** (13): `useAuth`, `useStripe`, `useAffiliate`, `useCitySearch`, `useVenueFilters`, `useMapLink`, `useCategoryRouteI18n`, `useLocaleSwitcher`, `usePasswordReset`, `useConfirmDialog`, `useDashboardAnimations`, `content-markdown`.
@@ -149,12 +149,10 @@ Never `rounded-lg` / `rounded-xl` / `rounded-full` / `shadow-*` / `any` type.
 State explicitly so agents don't "fix" them by accident:
 
 - **Dual taxonomy** kept from FCF: `venueCategories` DB table (venue FK) + `activities` editorial catalog (drives the `/categories` surface and DB matching helpers). An instantiation may COLLAPSE them into one table — the template keeps the FCF shape.
-- **SILO spoke types keep French slugs** (`guide`, `choisir-venue`, `ecoles`, `ceintures`, `equipement`, `techniques` — `shared/silo.ts` `SILO_ENTRY_TYPES`); they are URL segments and reserved slugs. Adjust per niche at instantiation.
+- **Silo spoke vocabulary is config data** (`directoryConfig.content.siloSpokes` → `shared/silo.ts` `SILO_SPOKE_TYPES`); the spokes render through one dispatch route (`app/pages/categories/[category]/[cities].vue` → `CategoriesContentView` / `CategoriesCityPage`), no static per-spoke page files. Per-niche rename = config + i18n `guide.types.<slug>` keys + content frontmatter `type:` values.
 - **DB-per-app, fresh migrations**: migrate to a NEW empty database only. The ~45 legacy migrations contain FCF martial-arts data and seeds — historical, append-only; do not squash or "clean" them without a strategy decision.
 - **`style` frontmatter key** in `categoryGuides_{fr,en}` is the **canonical category slug** (editorial catalog slug), deliberately NOT renamed to `category` to avoid collision with the existing editorial `category:` frontmatter field.
-- `shared/silo.ts` still hardcodes the spoke-type engine vocabulary (`directoryConfig.content.siloTopics` is planning data only — wiring it is a future step).
-- The scraping registry does not yet read `directoryConfig.scraping.sources` — keep the two in sync by hand.
-- Ser/content generation uses Gemini (`GEMINI_API_KEY`); translation memory tables exist (`translation.ts` migration).
+- Sample content generation uses Gemini (`GEMINI_API_KEY`); translation memory tables exist (`translation.ts` migration).
 
 ## Environment Variables
 
@@ -165,9 +163,9 @@ No `.env.example` — check `nuxt.config.ts` runtimeConfig.
 **Optional:** `PLUNK_SECRET_API_KEY`, `PLUNK_BASE_URL`, `PLUNK_DEFAULT_FROM` (email), `GEMINI_API_KEY` (AI matching/enrichment/content gen), `LOCATIONIQ_API_KEY`, `LOCATIONIQ_REGION`, `GEONAMES_USERNAME` (geocoding chain LocationIQ → GeoNames → Nominatim), `TEST_DATABASE_URL`.
 
 **Monetization (public, runtime):**
-- Affiliates: `NUXT_PUBLIC_AFFILIATE_RAKUTEN_SITE_ID`, `NUXT_PUBLIC_AFFILIATE_AWIN_AFFID` — publisher ids; empty ⇒ partner buttons hidden globally.
+- Affiliates: `NUXT_PUBLIC_AFFILIATE_RAKUTEN_SITE_ID`, `NUXT_PUBLIC_AFFILIATE_AWIN_AFFID` — publisher ids; empty ⇒ partner buttons hidden globally. Amazon associate tags per storefront: `NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_US` / `_UK` / `_FR` / `_DE` / `_ES` / `_IT` / `_PT` (pt tag rides the amazon.es storefront — Amazon has no Portuguese marketplace); empty ⇒ untagged search URLs.
 - Ads: `NUXT_PUBLIC_ADSENSE_CLIENT` (build-time `ca-pub-…`, gates script registry + `/ads.txt`) + slots `NUXT_PUBLIC_ADSENSE_SLOT_HOME`, `NUXT_PUBLIC_ADSENSE_SLOT_CATEGORIES_HUB`, `NUXT_PUBLIC_ADSENSE_SLOT_CATEGORY_DETAIL` (renamed from `*_STYLES_HUB`/`*_STYLE_DETAIL` at extraction).
-- Stripe: plan ids `premium` / `premium_pro` (see `app/composables/useStripe.ts`, `shared/types/auth.d.ts`).
+- Stripe: plan ids come from `directory.config.ts` `billing.plans[].id` — create matching Stripe products + `${id}_monthly`/`${id}_yearly` price lookup keys.
 
 **Analytics:** `NUXT_UMAMI_HOST`, `NUXT_UMAMI_ID` (+ runtime cloak `NUXT_UMAMI_WEBSITE`, `NUXT_UMAMI_ENDPOINT`).
 

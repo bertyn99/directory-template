@@ -2,14 +2,15 @@ import { getAllVenueSlugs, getCategoryCityCombinations } from "~~/server/db/quer
 import { listActivities } from "~~/server/db/queries/categories";
 import { getCityHubSlugs } from "~~/server/db/queries/cities";
 import { queryCollection } from "@nuxt/content/server";
+import { directoryConfig } from "~~/directory.config";
 import {
   ACTIVITY_CATALOG,
-  LOCALE_HREFLANG,
   buildCategoryPath,
   buildCategorySitemapAlternatives,
   findActivityDefinition,
   getActivityLocaleSlug,
 } from "~~/shared/activities";
+import { hreflangOf } from "~~/shared/locale-meta";
 import {
   majorEuCityFromPublicSlug,
   majorEuCityImageSlug,
@@ -36,9 +37,13 @@ export default defineSitemapEventHandler(async (event) => {
   const categoriesSitemap = Object.keys(ACTIVITY_CATALOG)
     .filter((canonicalSlug) => publishedCanonicalSlugs.has(canonicalSlug))
     .map((canonicalSlug) => {
-      const frSlug = getActivityLocaleSlug(canonicalSlug, "fr") ?? canonicalSlug;
+      // The default locale serves WITHOUT a URL prefix — its slug is the
+      // canonical (unprefixed) categories path.
+      const defaultSlug =
+        getActivityLocaleSlug(canonicalSlug, directoryConfig.defaultLocale)
+        ?? canonicalSlug;
       return asSitemapUrl({
-        loc: `categories/${frSlug}`,
+        loc: `categories/${defaultSlug}`,
         alternatives: buildCategorySitemapAlternatives(canonicalSlug),
       });
     });
@@ -65,10 +70,11 @@ export default defineSitemapEventHandler(async (event) => {
     if (seenCategoryCity.has(key)) return [];
     seenCategoryCity.add(key);
 
-    const frSlug = getActivityLocaleSlug(def.slug, "fr") ?? def.slug;
+    const defaultSlug =
+      getActivityLocaleSlug(def.slug, directoryConfig.defaultLocale) ?? def.slug;
     return [
       asSitemapUrl({
-        loc: `categories/${frSlug}/${citySlug}`,
+        loc: `categories/${defaultSlug}/${citySlug}`,
         alternatives: buildCategorySitemapAlternatives(def.slug, citySlug),
       }),
     ];
@@ -82,20 +88,15 @@ export default defineSitemapEventHandler(async (event) => {
   );
 
   // Category-guide silos — editorial prose (docs/seo/content-architecture.md §3b).
-  // Queried server-side from the categoryGuides collections; `hub` entries are
-  // skipped (hub URLs already come from the DB queries above). hreflang
-  // alternatives only for locales that actually have the (category, type) content.
-  const guideCollections = {
-    fr: "categoryGuides_fr",
-    en: "categoryGuides_en",
-    de: "categoryGuides_de",
-    es: "categoryGuides_es",
-    it: "categoryGuides_it",
-    pt: "categoryGuides_pt",
-  } as const;
+  // Queried server-side from the categoryGuides collections; only ACTIVE
+  // locales have one (content.config.ts derives the exact same set from
+  // directoryConfig.locales — querying a non-created collection would 500 the
+  // sitemap). `hub` entries are skipped (hub URLs already come from the DB
+  // queries above). hreflang alternatives only for locales that actually have
+  // the (category, type) content.
   const guideGroups = new Map<string, Array<{ locale: string; loc: string }>>();
-  for (const locale of Object.keys(guideCollections) as Array<keyof typeof guideCollections>) {
-    const rows = await queryCollection(event, guideCollections[locale])
+  for (const locale of directoryConfig.locales) {
+    const rows = await queryCollection(event, `categoryGuides_${locale}`)
       .select("style", "type")
       .all();
     for (const row of rows) {
@@ -103,7 +104,9 @@ export default defineSitemapEventHandler(async (event) => {
       const key = `${row.style}:${row.type}`;
       const group = guideGroups.get(key) ?? [];
       let loc: string | null = row.style === "_directory"
-        ? (locale === "fr" ? "/venues/guide" : `/${locale}/venues/guide`)
+        ? (locale === directoryConfig.defaultLocale
+            ? "/venues/guide"
+            : `/${locale}/venues/guide`)
         : null;
       if (!loc) {
         // Unknown category slug in content — skip instead of 500-ing the sitemap
@@ -120,8 +123,8 @@ export default defineSitemapEventHandler(async (event) => {
       asSitemapUrl({
         loc: loc.replace(/^\//, ""),
         alternatives: group.map((alt) => ({
-          hreflang: LOCALE_HREFLANG[alt.locale as keyof typeof LOCALE_HREFLANG],
-          href: `https://example-directory.com${alt.loc}`,
+          hreflang: hreflangOf(alt.locale) ?? alt.locale,
+          href: `${directoryConfig.url}${alt.loc}`,
         })),
       }),
     ),

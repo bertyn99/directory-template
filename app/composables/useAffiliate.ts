@@ -28,6 +28,7 @@ export function useAffiliate() {
       amazonTagDe: affiliate.amazonTagDe ?? EMPTY_AFFILIATE_TAGS.amazonTagDe,
       amazonTagEs: affiliate.amazonTagEs ?? EMPTY_AFFILIATE_TAGS.amazonTagEs,
       amazonTagIt: affiliate.amazonTagIt ?? EMPTY_AFFILIATE_TAGS.amazonTagIt,
+      amazonTagPt: affiliate.amazonTagPt ?? EMPTY_AFFILIATE_TAGS.amazonTagPt,
       awinAffid: affiliate.awinAffid ?? EMPTY_AFFILIATE_TAGS.awinAffid,
       rakutenSiteId: affiliate.rakutenSiteId ?? EMPTY_AFFILIATE_TAGS.rakutenSiteId,
     };

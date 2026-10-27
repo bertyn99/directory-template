@@ -18,7 +18,8 @@
  * - Sub-tracking: Rakuten u1 / Awin clickref = `<slot>-<placement>` (usually
  *   `<category-slug>-<placement>`).
  * - rel="sponsored noopener noreferrer" (AFFILIATE_REL) + the disclosure
- *   string (directoryConfig.affiliates.disclosure) are mandatory on every
+ *   string (i18n key `affiliate.disclosure` — translatable legal copy, the
+ *   locale files are its only source) are mandatory on every
  *   affiliate link (FR: loi "confiance dans l'économie numérique").
  * - Never surface promo codes (merchant program terms).
  *
@@ -76,6 +77,7 @@ export type AffiliateTags = {
   amazonTagDe: string;
   amazonTagEs: string;
   amazonTagIt: string;
+  amazonTagPt: string;
   awinAffid: string;
   rakutenSiteId: string;
 };
@@ -87,6 +89,7 @@ export const EMPTY_AFFILIATE_TAGS: AffiliateTags = {
   amazonTagDe: "",
   amazonTagEs: "",
   amazonTagIt: "",
+  amazonTagPt: "",
   awinAffid: "",
   rakutenSiteId: "",
 };
@@ -99,6 +102,8 @@ const AMAZON_HOST: Record<ConfigLocale, string> = {
   de: "www.amazon.de",
   es: "www.amazon.es",
   it: "www.amazon.it",
+  // Amazon has no Portuguese marketplace — pt shoppers buy on amazon.es.
+  // The associate TAG, however, is per-locale (amazonTagPt), not the ES one.
   pt: "www.amazon.es",
 };
 
@@ -261,7 +266,7 @@ function amazonTagForLocale(locale: ConfigLocale, tags: AffiliateTags): string {
     case "it":
       return tags.amazonTagIt;
     case "pt":
-      return tags.amazonTagEs;
+      return tags.amazonTagPt;
     default: {
       const _exhaustive: never = locale;
       return _exhaustive;

@@ -1,3 +1,5 @@
+import type { directoryConfig } from '~~/directory.config'
+
 declare module '#auth-utils' {
   interface User {
     id: string
@@ -13,8 +15,9 @@ declare module '#auth-utils' {
 
     // SaaS feature limits
     subscription?: {
-      // ⚠️ Must match the Stripe product names created per instantiation — update here AND in the Stripe dashboard.
-      plan: 'free' | 'premium' | 'premium_pro'
+      // Derived from directory.config.ts `billing` — the single source for
+      // plan ids (create Stripe products with exactly those ids).
+      plan: 'free' | (typeof directoryConfig.billing.plans)[number]['id']
       status: 'active' | 'canceled' | 'past_due' | 'unpaid'
       currentPeriodEnd?: Date
     }

@@ -4,6 +4,7 @@ import { sendVerificationEmail, generateVerificationToken } from '~~/server/util
 import { extractSessionDataInRequest } from '~~/server/utils/session'
 import { registerUserSchema } from '~~/shared/validator/user.schema'
 import { hashPassword } from '~~/server/utils/auth/password'
+import { directoryConfig } from '~~/directory.config'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -60,7 +61,7 @@ export default defineEventHandler(async (event) => {
     event.waitUntil(async () => {
       try {
         const config = useRuntimeConfig()
-        const _appBaseUrl = config.public.appBaseUrl || 'https://example-directory.com'
+        const _appBaseUrl = config.public.appBaseUrl || directoryConfig.url
 
         // Send welcome email to newly registered user
         /*  await sendEmail(event, {

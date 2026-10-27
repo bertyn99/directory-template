@@ -1,4 +1,6 @@
 // app/composables/useStripe.ts
+import { directoryConfig } from "~~/directory.config";
+
 export function useStripe() {
   const loading = ref(false);
   const { user } = useUserSession();
@@ -69,71 +71,57 @@ export function useStripe() {
     return res;
   };
 
-  // Fallback tiers (used if API fails or no pricing data available)
+  // Fallback pricing table (used if the pricing API fails or returns nothing).
+  // Plan ids, titles, prices, descriptions and features come from
+  // directory.config.ts (billing) — the same ids the Stripe products must use,
+  // so the checkout() lookup keys `${id}_${billingCycle}` always match a real
+  // Stripe price. The free tier is static engine copy: it never reaches
+  // checkout (guarded by tier.id !== "tier-free" below) and exists only to
+  // render the visitor card.
+  const freeTier = {
+    title: "Visitor",
+    id: "tier-free",
+    description: "Search and discover venues",
+    price: {
+      monthly: "Free",
+      yearly: "Free",
+    },
+    features: [
+      "Search venues by location",
+      "View venue profiles",
+      "Browse activities and schedules",
+      "Read reviews",
+    ],
+    button: {
+      label: "Get Started",
+      to: "/dashboard",
+    },
+  };
+
+  const formatPrice = (amount: number) => `$${amount}`;
+
   const fallbackTiers = [
-    {
-      title: "Visitor",
-      id: "tier-free",
-      description: "Search and discover venues",
+    freeTier,
+    ...directoryConfig.billing.plans.map((plan) => ({
+      title: plan.title,
+      id: plan.id,
+      description: plan.description,
       price: {
-        monthly: "Free",
-        yearly: "Free",
-      },
-      features: [
-        "Search venues by location",
-        "View venue profiles",
-        "Browse activities and schedules",
-        "Read reviews",
-      ],
-      button: {
-        label: "Get Started",
-        to: "/dashboard",
-      },
-    },
-    {
-      // ⚠️ Must match the Stripe product names created per instantiation — update here AND in the Stripe dashboard.
-      title: "Premium",
-      id: "premium",
-      description: "Customize your venue page.",
-      price: {
-        monthly: "$9.99",
-        yearly: "$99.99",
+        monthly: formatPrice(plan.monthly),
+        yearly: formatPrice(plan.yearly),
       },
       billingCycle: "/month",
-      badge: "Most Popular",
-      scale: true,
-      features: [
-        "Add & customize venue page",
-        "Propose event banners",
-        "Manage venue information",
-        "Update schedules & activities",
-        "Upload venue images",
-      ],
+      // highlight ⇒ the emphasized card: badge + primary CTA (same pair the
+      // former hardcoded "Most Popular"/scale entries produced).
+      ...(plan.highlight && { badge: "Most Popular", scale: true }),
+      features: [...plan.features],
+      // The label below is never rendered for paid tiers — the `plans`
+      // computed overrides it with the auth-state CTA ("Buy Now"/…), exactly
+      // like it does for API-provided tiers.
       button: {
-        label: "Go Premium",
+        label: plan.title,
       },
-    },
-    {
-      title: "Premium Pro",
-      id: "premium_pro",
-      description: "Maximum control. Advanced features.",
-      price: {
-        monthly: "$19.99",
-        yearly: "$199.99",
-      },
-      billingCycle: "/month",
-      features: [
-        "Everything in Premium",
-        "Appointment & inscription section",
-        "Coach listing & management",
-        "Advanced analytics",
-        "Priority support",
-        "Custom branding options",
-      ],
-      button: {
-        label: "Go Pro",
-      },
-    },
+    })),
   ];
 
   // Fetch pricing from API

@@ -10,9 +10,11 @@
  * our domain, requests proxied + anonymised) — see scripts.registry in
  * nuxt.config.ts. Slot IDs come from ad units created in the AdSense dashboard.
  */
+import type { AdPlacement } from '~~/directory.config'
+
 const props = defineProps<{
   /** Which slot from runtimeConfig.public.adsense.slots to render. */
-  placement: 'home' | 'categoriesHub' | 'categoryDetail'
+  placement: AdPlacement
   /**
    * leaderboard — full-width banner between homepage sections.
    * card — grid card matching the categories-hub tiles.

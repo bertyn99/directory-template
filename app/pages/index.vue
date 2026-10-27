@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { directoryConfig } from '~~/directory.config'
+
 const { t } = useI18n()
 const localePath = useLocalePath()
 
@@ -75,7 +77,7 @@ useSchemaOrg([
     }),
     defineWebSite({
         name: 'Directory Template',
-        url: 'https://example-directory.com',
+        url: directoryConfig.url,
         potentialAction: [
             defineSearchAction({
                 target: `${localePath('/venues')}?city={search_term_string}`,

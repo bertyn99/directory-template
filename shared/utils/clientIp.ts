@@ -1,5 +1,5 @@
 /**
- * Visitor IP as seen by this app (Cloudflare in front of example-directory.com).
+ * Visitor IP as seen by this app (Cloudflare in front of the configured site origin).
  *
  * Keep in sync with the cloak handler in patches/nuxt-umami.patch
  * (node_modules/nuxt-umami/dist/runtime/server/endpoint.js). That handler

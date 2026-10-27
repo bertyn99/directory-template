@@ -1,20 +1,24 @@
 import { findActivityDefinition } from './activities'
+import { directoryConfig } from '../directory.config'
 
-export const CONTENT_LOCALES = ['fr', 'en', 'de', 'es', 'it', 'pt'] as const
+/**
+ * Active locales — directoryConfig.locales is the ONLY locale list the app
+ * routes, renders and builds content collections for. Every derived locale
+ * set (content collections, switcher, hreflang) narrows to this.
+ */
+export const CONTENT_LOCALES = directoryConfig.locales
 export type ContentLocale = (typeof CONTENT_LOCALES)[number]
 
-export const SILO_SPOKE_TYPES = [
-  'guide',
-  'choisir-venue',
-  'ecoles',
-  'ceintures',
-  'equipement',
-  'techniques',
-] as const
+/**
+ * Silo spoke vocabulary — driven by directoryConfig.content.siloSpokes
+ * (per-niche URL segments reserved under /categories/<category>/<spoke>;
+ * labels live in the i18n keys `guide.types.<slug>`).
+ */
+export const SILO_SPOKE_TYPES = directoryConfig.content.siloSpokes
 
 export type SiloSpokeType = (typeof SILO_SPOKE_TYPES)[number]
 
-export const SILO_ENTRY_TYPES = ['guide', 'choisir-venue', 'ecoles', 'ceintures', 'equipement', 'techniques', 'hub'] as const
+export const SILO_ENTRY_TYPES = [...SILO_SPOKE_TYPES, 'hub'] as const
 export type SiloEntryType = (typeof SILO_ENTRY_TYPES)[number]
 
 /** @deprecated Use SILO_SPOKE_TYPES — kept as an alias for spoke routes. */
@@ -30,14 +34,27 @@ export function isContentLocale(value: string): value is ContentLocale {
 }
 
 export function resolveContentLocale(locale: string): ContentLocale {
-  return isContentLocale(locale) ? locale : 'en'
+  return isContentLocale(locale) ? locale : directoryConfig.defaultLocale
 }
 
-export function categoryGuidesCollectionName(locale: string): `categoryGuides_${ContentLocale}` {
-  return `categoryGuides_${resolveContentLocale(locale)}`
+/**
+ * Content collection holding the category guides for an ACTIVE locale.
+ * Takes an already-narrowed ContentLocale (use resolveContentLocale for raw
+ * input) so the returned name can never reference a collection that
+ * content.config.ts did not create — collections are derived from the same
+ * directoryConfig.locales set. Querying a non-created collection would 500.
+ */
+export function categoryGuidesCollectionName(locale: ContentLocale): `categoryGuides_${ContentLocale}` {
+  return `categoryGuides_${locale}`
 }
-/** Locales that ship the venue-index guide (content/{locale}/category-guides/_directory/guide.md). */
-export const DIRECTORY_GUIDE_LOCALES = ['fr', 'en'] as const
+
+/**
+ * Locales that ship the venue-index guide
+ * (content/{locale}/category-guides/_directory/guide.md). Derived from the
+ * active locales — the template ships the _directory guide for all of them;
+ * drop a locale here if an instantiation skips it.
+ */
+export const DIRECTORY_GUIDE_LOCALES = directoryConfig.locales
 
 export function hasDirectoryGuide(locale: string): boolean {
   return (DIRECTORY_GUIDE_LOCALES as readonly string[]).includes(locale)

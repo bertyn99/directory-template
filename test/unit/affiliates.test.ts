@@ -50,6 +50,25 @@ describe("affiliate catalog", () => {
     expect(amazonFr).toContain("tag=sample-fr-21");
   });
 
+  it("routes Portuguese shoppers to their OWN tag on the amazon.es storefront", () => {
+    // Amazon has no PT marketplace — the storefront is amazon.es, but the
+    // associate tag must be amazonTagPt (regression: pt used to read the
+    // ES tag, crediting the wrong associate program).
+    const amazonPt = buildPartnerUrl("amazon", "tapete de yoga", "pt", {
+      ...EMPTY_AFFILIATE_TAGS,
+      amazonTagPt: "sample-pt-21",
+    });
+    expect(amazonPt).toContain("https://www.amazon.es/s");
+    expect(amazonPt).toContain("tag=sample-pt-21");
+
+    // Only the pt tag applies in pt — an ES tag alone stays off the link.
+    const esOnly = buildPartnerUrl("amazon", "tapete de yoga", "pt", {
+      ...EMPTY_AFFILIATE_TAGS,
+      amazonTagEs: "sample-es-21",
+    });
+    expect(esOnly).not.toContain("tag=");
+  });
+
   it("wraps the FR Rakuten program with u1 sub-tracking", () => {
     const url = buildPartnerUrl(
       "decathlon",

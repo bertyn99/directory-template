@@ -54,10 +54,7 @@
     },
     "blog": "Blog",
     "families": {
-      "striking": "Fitness & Cardio",
-      "grappling": "Kraft & Mobilität",
-      "traditional": "Traditionelle Disziplinen",
-      "fitness": "Fitness & Wellness"
+      "wellness": "Fitness & Wellness"
     },
     "addVenue": "Verein hinzufügen",
     "mostSearched": "Meistgesuchte Stile",
@@ -366,8 +363,8 @@
     "types": {
       "guide": "Guide",
       "choisir-venue": "Verein wählen",
-      "ecoles": "Schulen",
-      "ceintures": "Fortschritt",
+      "comparer": "Vergleiche",
+      "tarifs": "Preise",
       "equipement": "Ausrüstung",
       "techniques": "Techniken"
     }

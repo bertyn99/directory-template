@@ -1,36 +1,70 @@
 import type { ScrapingSourceAdapter, CountryCode, LocaleCode } from "./types";
 import { masalledesportSource } from "./masalledesport";
 import { fitnessparkSource } from "./fitnesspark";
+import { directoryConfig } from "~~/directory.config";
+import { SCRAPING_SOURCE_IDS } from "./ids";
 
 /**
  * Registry of all available scraping sources.
  *
  * The template ships two REFERENCE adapters (multi-sport venue aggregators).
  * Each instantiation replaces them with adapters for its own data sources.
+ *
+ * Adapters are CODE (Playwright parsers — logic, not config). What IS config
+ * is which of them are active: `directoryConfig.scraping.sources` selects
+ * the subset `getAllSources()` returns. Unknown ids fail fast at boot, and
+ * ids.ts (the Playwright-free copy of the adapter ids the unit contract test
+ * reads) is drift-checked against the adapters below.
  */
-const sources: ScrapingSourceAdapter[] = [
+const allAdapters: ScrapingSourceAdapter[] = [
   masalledesportSource,
   fitnessparkSource,
 ];
+
+// Drift guard: ids.ts must mirror exactly the adapters registered here.
+if (
+  SCRAPING_SOURCE_IDS.length !== allAdapters.length
+  || !SCRAPING_SOURCE_IDS.every((id) => allAdapters.some((a) => a.meta.id === id))
+) {
+  throw new Error(
+    `Scraping source drift: sources/ids.ts (${SCRAPING_SOURCE_IDS.join(", ")}) `
+    + `does not match the adapters registered in registry.ts (${allAdapters.map((a) => a.meta.id).join(", ")}). Update both together.`,
+  );
+}
+
+// Fail fast when the config activates an adapter that does not exist.
+const unknownSources = directoryConfig.scraping.sources.filter(
+  (id) => !allAdapters.some((a) => a.meta.id === id),
+);
+if (unknownSources.length) {
+  throw new Error(
+    `directory.config scraping.sources lists unknown adapters: ${unknownSources.join(", ")}`,
+  );
+}
 
 /**
  * Type representing the union of all valid source codes
  * Used for type-safe source references in the database
  */
-export type SourceCode = (typeof sources)[number]["meta"]["id"];
+export type SourceCode = (typeof allAdapters)[number]["meta"]["id"];
 
 /**
- * Get all available sources
+ * Get the ACTIVE sources — the registered adapters selected by
+ * directoryConfig.scraping.sources (config order is not preserved; the
+ * registry order is stable).
  */
 export function getAllSources(): ScrapingSourceAdapter[] {
-  return [...sources];
+  return allAdapters.filter((a) =>
+    (directoryConfig.scraping.sources as readonly string[]).includes(a.meta.id),
+  );
 }
 
 /**
- * Get a source by its ID
+ * Get a source by its ID (among all REGISTERED adapters, active or not —
+ * explicit per-id scrape requests resolve here)
  */
 export function getSourceById(id: string): ScrapingSourceAdapter | undefined {
-  return sources.find((source) => source.meta.id === id);
+  return allAdapters.find((source) => source.meta.id === id);
 }
 
 /**
@@ -40,7 +74,7 @@ export function getSourcesByCountryAndLocale(
   country: CountryCode,
   locale?: LocaleCode,
 ): ScrapingSourceAdapter[] {
-  return sources.filter((source) => {
+  return allAdapters.filter((source) => {
     const countryMatch = source.meta.countries.includes(country);
     if (!countryMatch) return false;
     if (locale) {

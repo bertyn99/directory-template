@@ -20,6 +20,7 @@ import { seed } from 'drizzle-seed'
 import { hashPassword } from '../utils/auth/password'
 import { sql } from 'drizzle-orm'
 import { useDrizzle } from '#imports'
+import { directoryConfig } from '../../directory.config'
 import * as schema from './schemas/index'
 
 const db = useDrizzle()
@@ -232,7 +233,10 @@ async function main() {
             values: [null, 1, 2, 3, 4, 5],
           }),
           subscription: funcs.valuesFromArray({
-            values: ['free', 'premium', 'elite'],
+            // Plan vocabulary from directory.config.ts (billing) — was
+            // hardcoded with an unknown 'elite' value the session type and
+            // UI never recognized.
+            values: ['free', ...directoryConfig.billing.plans.map((plan) => plan.id)],
           }),
           website: funcs.valuesFromArray({
             values: [null, 'https://example.com', 'https://venue.com'],

@@ -7,17 +7,28 @@
  * - Source aliases map to a canonical English slug
  * - Never expose alias rows as separate filter options
  *
- * ⚠️ PLACEHOLDER SAMPLES — the catalog entries below (fitness / yoga / spa)
- * are generic samples so the template compiles and tests pass. Each
- * instantiation REPLACES them with its own category taxonomy.
+ * All CATALOG DATA (categories, aliases, junk/alias-only slugs, families,
+ * most-searched list, seed ids) lives in directory.config.ts `taxonomy.*` —
+ * the single source of truth. This module only derives the runtime
+ * structures from it and hosts the matching / routing MECHANISM. Never edit
+ * data here; replace taxonomy.* in the config.
  */
 
-/** Seed IDs for DBs created from fixed-ID migrations. Do NOT use for prod identity. */
-export const ACTIVITIES = {
-  FITNESS: 1,
-  YOGA: 2,
-  SPA: 3,
-} as const satisfies Record<string, number>;
+import { directoryConfig } from "../directory.config";
+import { hreflangOf } from "./locale-meta";
+
+/**
+ * Seed IDs for DBs created from fixed-ID migrations (config keys are the
+ * canonical slugs, uppercased here). Do NOT use for prod identity.
+ */
+export const ACTIVITIES = Object.fromEntries(
+  Object.entries(directoryConfig.taxonomy.seedIds).map(([slug, id]) => [
+    slug.toUpperCase(),
+    id,
+  ]),
+) as {
+  [K in keyof typeof directoryConfig.taxonomy.seedIds as Uppercase<K & string>]: (typeof directoryConfig.taxonomy.seedIds)[K];
+};
 
 export type ActivityId = (typeof ACTIVITIES)[keyof typeof ACTIVITIES];
 
@@ -31,15 +42,6 @@ export const ACTIVITY_LOCALES: ActivityLocale[] = [
   "it",
   "pt",
 ];
-
-export const LOCALE_HREFLANG: Record<ActivityLocale, string> = {
-  fr: "fr-FR",
-  en: "en-US",
-  de: "de-DE",
-  es: "es-ES",
-  it: "it-IT",
-  pt: "pt-PT",
-};
 
 export interface ActivityDefinition {
   /** English canonical slug — portable identity across environments */
@@ -57,48 +59,27 @@ export interface ActivityDefinition {
   legacySlugs?: string[];
 }
 
-function def(
-  slug: string,
-  name: string,
-  names: Partial<Record<ActivityLocale, string>> = {},
-  slugs: Partial<Record<ActivityLocale, string>> = {},
-  legacySlugs: string[] = [],
-): ActivityDefinition {
-  return {
-    slug,
-    name,
-    names: { en: name, ...names },
-    slugs: { en: slug, ...slugs },
-    legacySlugs,
-  };
-}
-
 /**
- * Canonical categories keyed by English slug.
+ * Canonical categories keyed by English slug, derived from
+ * directoryConfig.taxonomy.categories (en label/slug mirror `name`/`slug`,
+ * exactly like the former def() helper did).
  * Match DB rows via findActivityDefinition() — never by numeric id.
- *
- * ⚠️ PLACEHOLDER SAMPLES (fitness / yoga / spa) — replace per instantiation.
  */
-export const ACTIVITY_CATALOG: Record<string, ActivityDefinition> = {
-  fitness: def(
-    "fitness",
-    "Fitness",
-    { fr: "Fitness", de: "Fitness", es: "Fitness", it: "Fitness", pt: "Fitness" },
-    { fr: "fitness", de: "fitness", es: "fitness", it: "fitness", pt: "fitness" },
-  ),
-  yoga: def(
-    "yoga",
-    "Yoga",
-    { fr: "Yoga", de: "Yoga", es: "Yoga", it: "Yoga", pt: "Yoga" },
-    { fr: "yoga", de: "yoga", es: "yoga", it: "yoga", pt: "yoga" },
-  ),
-  spa: def(
-    "spa",
-    "Spa",
-    { fr: "Spa", de: "Spa", es: "Spa", it: "Spa", pt: "Spa" },
-    { fr: "spa", de: "spa", es: "spa", it: "spa", pt: "spa" },
-  ),
-};
+export const ACTIVITY_CATALOG: Record<string, ActivityDefinition> =
+  Object.fromEntries(
+    directoryConfig.taxonomy.categories.map(
+      (category): [string, ActivityDefinition] => [
+        category.slug,
+        {
+          slug: category.slug,
+          name: category.name,
+          names: { en: category.name, ...category.labels },
+          slugs: { en: category.slug, ...category.localeSlugs },
+          legacySlugs: [...(category.legacySlugs ?? [])],
+        },
+      ],
+    ),
+  );
 
 /** English display names keyed by English slug */
 export const ACTIVITY_NAMES_BY_SLUG: Record<string, string> = Object.fromEntries(
@@ -109,27 +90,19 @@ export const ACTIVITY_NAMES_BY_SLUG: Record<string, string> = Object.fromEntries
  * @deprecated Seed-ID map — IDs differ between local and prod. Prefer slug helpers.
  * Kept for scraping constants that still reference numeric IDs on seed-shaped DBs.
  */
-export const ACTIVITY_NAMES: Record<ActivityId, string> = {
-  [ACTIVITIES.FITNESS]: "Fitness",
-  [ACTIVITIES.YOGA]: "Yoga",
-  [ACTIVITIES.SPA]: "Spa",
-};
+export const ACTIVITY_NAMES: Record<ActivityId, string> = Object.fromEntries(
+  Object.entries(directoryConfig.taxonomy.seedIds).map(([slug, id]) => [
+    id,
+    ACTIVITY_CATALOG[slug]?.name ?? slug,
+  ]),
+) as Record<ActivityId, string>;
 
 /**
- * Alias slug/name → canonical English slug.
- * SAMPLE aliases — each instantiation maps its real source aliases here.
+ * Alias slug/name → canonical English slug (directoryConfig.taxonomy.aliases;
+ * each instantiation maps its real source aliases there).
  */
 export const ACTIVITY_ALIASES: Record<string, string> = {
-  // Fitness
-  gym: "fitness",
-  "salle-de-sport": "fitness",
-  fitnessstudio: "fitness",
-  // Yoga
-  "hatha-yoga": "yoga",
-  vinyasa: "yoga",
-  // Spa
-  wellness: "spa",
-  "bien-etre": "spa",
+  ...directoryConfig.taxonomy.aliases,
 };
 
 /**
@@ -137,13 +110,14 @@ export const ACTIVITY_ALIASES: Record<string, string> = {
  * Canonical rows may temporarily still use these as primary slug;
  * listActivities promotes them via catalog.
  */
-export const ACTIVITY_ALIAS_ONLY_SLUGS = new Set([
-  "gym",
-  "wellness",
-]);
+export const ACTIVITY_ALIAS_ONLY_SLUGS = new Set<string>(
+  directoryConfig.taxonomy.aliasOnlySlugs,
+);
 
 /** Known junk rows (venue names wrongly inserted as activities) */
-export const ACTIVITY_JUNK_SLUGS = new Set<string>();
+export const ACTIVITY_JUNK_SLUGS = new Set<string>(
+  directoryConfig.taxonomy.junkSlugs,
+);
 
 /** @deprecated use ACTIVITY_ALIAS_ONLY_SLUGS */
 export const ACTIVITY_ALIAS_SLUGS = ACTIVITY_ALIAS_ONLY_SLUGS;
@@ -390,7 +364,8 @@ export function buildCategoryPath(
 ): string {
   const categorySlug =
     getActivityLocaleSlug(canonicalSlug, locale) ?? canonicalSlug;
-  const localePrefix = locale === "fr" ? "" : `/${locale}`;
+  const localePrefix =
+    locale === directoryConfig.defaultLocale ? "" : `/${locale}`;
   const cityPart = citySlug ? `/${citySlug}` : "";
   return `${localePrefix}/categories/${categorySlug}${cityPart}`;
 }
@@ -422,10 +397,10 @@ export function resolveCategoryRedirectPath(
 export function buildCategorySitemapAlternatives(
   canonicalSlug: string,
   citySlug?: string,
-  siteUrl = "https://example-directory.com",
+  siteUrl: string = directoryConfig.url,
 ): Array<{ hreflang: string; href: string }> {
   return ACTIVITY_LOCALES.map((loc) => ({
-    hreflang: LOCALE_HREFLANG[loc],
+    hreflang: hreflangOf(loc) ?? loc,
     href: `${siteUrl}${buildCategoryPath(loc, canonicalSlug, citySlug)}`,
   }));
 }
@@ -436,25 +411,22 @@ export function buildCategorySitemapAlternatives(
  * Canonical slugs; compact nav intersects MOST_SEARCHED_CATEGORIES with live hubs
  * (same listActivities filter as the sitemap).
  *
- * SAMPLE structure — labelKey values are i18n keys each instantiation defines.
+ * Derived from directoryConfig.taxonomy.families — `labelKey` values are i18n
+ * keys each instantiation defines.
  */
-export const CATEGORY_FAMILIES: Array<{ id: string; labelKey: string; categories: string[] }> = [
-  {
-    id: 'wellness',
-    labelKey: 'nav.families.fitness',
-    categories: ['fitness', 'yoga', 'spa'],
-  },
-];
+export const CATEGORY_FAMILIES: Array<{ id: string; labelKey: string; categories: string[] }> =
+  directoryConfig.taxonomy.families.map((family) => ({
+    id: family.id,
+    labelKey: family.labelKey,
+    categories: [...family.categories],
+  }));
 
 /**
  * Curated "most searched" categories for compact surfaces that cannot list
- * every live hub (data-backed by GSC category-query traffic).
+ * every live hub (data-backed by GSC category-query traffic). Derived from
+ * directoryConfig.taxonomy.mostSearched.
  */
-export const MOST_SEARCHED_CATEGORIES = [
-  'fitness',
-  'yoga',
-  'spa',
-] as const;
+export const MOST_SEARCHED_CATEGORIES = directoryConfig.taxonomy.mostSearched;
 
 /** Sibling hubs in the same family, for the pillar "similar categories" module. */
 export function siblingCategorySlugs(canonicalSlug: string, limit = 3): string[] {

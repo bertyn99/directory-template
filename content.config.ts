@@ -2,7 +2,8 @@ import { defineContentConfig, defineCollection } from '@nuxt/content'
 import { defineSitemapSchema } from '@nuxtjs/sitemap/content'
 import { defineRobotsSchema } from '@nuxtjs/robots/content'
 import { z } from 'zod'
-import { SILO_ENTRY_TYPES } from './shared/silo'
+import { directoryConfig } from './directory.config.ts'
+import { SILO_ENTRY_TYPES } from './shared/silo.ts'
 
 const blogSchema = z.object({
   title: z.string(),
@@ -22,46 +23,61 @@ const blogSchema = z.object({
   robots: defineRobotsSchema(),
 })
 
+/**
+ * Self-contained onUrl callback prepending a locale prefix to content URLs.
+ * @nuxtjs/sitemap serializes the callback INTO the server bundle as source
+ * text and rejects any identifier declared outside it (closures/imports do
+ * not exist there), so the prefix must be a literal inside the function
+ * source — hence the code generation at config-eval time.
+ */
+function sitemapUrlPrefixer(prefix: string): (url: { loc: string }) => void {
+  return new Function(
+    'url',
+    `url.loc = ${JSON.stringify(prefix)} + url.loc`,
+  ) as (url: { loc: string }) => void
+}
+
 export default defineContentConfig({
   collections: {
-    blog_en: defineCollection({
-      type: 'page',
-      source: {
-        include: 'en/blog/**',
-        prefix: '/blog',
-      },
-      schema: z.object({
-        ...blogSchema.shape,
-        sitemap: defineSitemapSchema({
-          name: 'blog_en',
-          onUrl: (url) => {
-            url.loc = '/en' + url.loc
-          },
-        }),
-        robots: defineRobotsSchema(),
-      }),
-    }),
-    blog_fr: defineCollection({
-      type: 'page',
-      source: {
-        include: 'fr/blog/**',
-        prefix: '/blog',
-      },
-      schema: z.object({
-        ...blogSchema.shape,
-        sitemap: defineSitemapSchema({ name: 'blog_fr' }),
-        robots: defineRobotsSchema(),
-      }),
-    }),
-    // ── Style-guide silos (content-architecture.md §3c) ──────────────────
-    // Editorial prose for /categories/{style}/guide + subtopics. Bound to the DB
-    // style via the canonical `style` slug (shared/activities.ts). Collection
-    // paths are INTERNAL: public URLs come from custom routes querying by
-    // frontmatter (style + type), and sitemap entries are emitted manually in
-    // server/api/__sitemap__/urls/index.ts (with hreflang) — hence
-    // `filter: () => false` keeps these out of auto-emission.
+    // One blog collection per ACTIVE locale (directoryConfig.locales) —
+    // activating a locale in the config creates its collection (and its
+    // content/{locale}/blog/ sources) automatically.
+    // prefix_except_default: the default locale's content URLs are already
+    // prefix-less; other locales get their code prepended for the sitemap.
     ...Object.fromEntries(
-      (['fr', 'en'] as const).map((locale) => {
+      directoryConfig.locales.map((locale) => {
+        const name = `blog_${locale}`
+        const urlPrefix = locale === directoryConfig.defaultLocale ? '' : `/${locale}`
+        return [
+          name,
+          defineCollection({
+            type: 'page',
+            source: {
+              include: `${locale}/blog/**`,
+              prefix: '/blog',
+            },
+            schema: z.object({
+              ...blogSchema.shape,
+              sitemap: urlPrefix
+                ? defineSitemapSchema({ name, onUrl: sitemapUrlPrefixer(urlPrefix) })
+                : defineSitemapSchema({ name }),
+              robots: defineRobotsSchema(),
+            }),
+          }),
+        ]
+      }),
+    ),
+    // ── Category-guide silos (content-architecture.md §3c) ────────────────
+    // Editorial prose for /categories/{style}/guide + subtopics, one collection
+    // per ACTIVE locale (directoryConfig.locales — the sitemap handler iterates
+    // the exact same set). Bound to the DB style via the canonical `style` slug
+    // (shared/activities.ts). Collection paths are INTERNAL: public URLs come
+    // from custom routes querying by frontmatter (style + type), and sitemap
+    // entries are emitted manually in server/api/__sitemap__/urls/index.ts
+    // (with hreflang) — hence `filter: () => false` keeps these out of
+    // auto-emission.
+    ...Object.fromEntries(
+      directoryConfig.locales.map((locale) => {
         const prefix = '/categories'
         const name = `categoryGuides_${locale}`
         return [

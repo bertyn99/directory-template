@@ -5,21 +5,12 @@ import { createHash } from "node:crypto";
 
 // Single instantiation surface — brand, locales, taxonomy, monetization.
 // Edit directory.config.ts to instantiate the template; this file only wires it.
-import directoryConfig from "./directory.config";
-
-/**
- * Full locale metadata for every translation file shipped in i18n/locales/.
- * Activation is decided by directoryConfig.locales — inactive codes keep
- * their files on disk but are not routed, not in hreflang, not in the sitemap.
- */
-const I18N_LOCALE_META = {
-  fr: { language: "fr-FR", file: "fr.json", name: "Français" },
-  en: { language: "en-US", file: "en.json", name: "English" },
-  de: { language: "de-DE", file: "de.json", name: "Deutsch" },
-  es: { language: "es-ES", file: "es.json", name: "Español" },
-  it: { language: "it-IT", file: "it.json", name: "Italiano" },
-  pt: { language: "pt-PT", file: "pt.json", name: "Português" },
-} as const;
+// Explicit .ts extensions: Node's native TS loader (NUXT_B5023) requires them
+// for the files it loads directly (this one + content.config.ts).
+import directoryConfig from "./directory.config.ts";
+// Locale display metadata (BCP-47 tag, name, flag) for every translation file
+// shipped in i18n/locales/ — single source of truth in shared/locale-meta.ts.
+import { SHIPPED_LOCALES } from "./shared/locale-meta.ts";
 
 // CSRF: nuxt-csurf uses its encryptSecret as a RAW aes-256-cbc key (exactly
 // 32 bytes required) — any other length throws "Invalid key length" on every
@@ -66,6 +57,24 @@ const umamiCspOrigin = (() => {
     return null;
   }
 })();
+
+// Per-niche icon safelist — icons bound at runtime are invisible to the
+// clientBundle scanner, so they must be listed here explicitly:
+// - affiliate product icons are DERIVED from directoryConfig.affiliates
+//   (.products[].icon, stored as UIcon names "i-<collection>-<name>" — the
+//   safelist wants "<collection>:<name>" colon format);
+// - the category icon map in app/components/venue/Card.vue
+//   (getCategoryIcon()) is a hand-written runtime map and stays static.
+const categoryIcons = [
+  "lucide:map-pin",
+  "lucide:flower-2",
+  "lucide:waves",
+  "lucide:music",
+  "lucide:activity",
+];
+const affiliateProductIcons = directoryConfig.affiliates.products.map((product) =>
+  product.icon.replace(/^i-/, "").replace("-", ":"),
+);
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-06-03",
@@ -136,19 +145,10 @@ export default defineNuxtConfig({
         "mdi:subway-variant",
         "mdi:train-variant",
         "mdi:help-circle",
-        // Per-niche icon safelist — replace when instantiating: icons bound at
-        // runtime from directory.config.ts are invisible to the build scanner.
-        // Current entries: the sample affiliate product icons
-        // (directory.config.ts affiliates.products) + the category icon map in
-        // app/components/venue/Card.vue (getCategoryIcon()).
-        "lucide:map-pin",
-        "lucide:sparkles",
-        "lucide:droplets",
-        "lucide:dumbbell",
-        "lucide:flower-2",
-        "lucide:waves",
-        "lucide:music",
-        "lucide:activity",
+        // Category icon map in app/components/venue/Card.vue (getCategoryIcon()).
+        ...categoryIcons,
+        // Sample affiliate product icons (directoryConfig.affiliates.products).
+        ...affiliateProductIcons,
       ],
     },
     // Resolve any icon from these collections server-side from the locally
@@ -294,12 +294,15 @@ export default defineNuxtConfig({
       affiliate: {
         // Amazon associate tags per storefront — leave empty until each
         // program is signed; empty ⇒ plain search URLs, no tag param.
-        amazonTagUs: "",
-        amazonTagUk: "",
-        amazonTagFr: "",
-        amazonTagDe: "",
-        amazonTagEs: "",
-        amazonTagIt: "",
+        // (pt uses amazonTagPt on the amazon.es storefront — Amazon has no
+        // Portuguese marketplace, but the associate program is per-locale.)
+        amazonTagUs: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_US || "",
+        amazonTagUk: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_UK || "",
+        amazonTagFr: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_FR || "",
+        amazonTagDe: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_DE || "",
+        amazonTagEs: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_ES || "",
+        amazonTagIt: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_IT || "",
+        amazonTagPt: process.env.NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_PT || "",
         // Awin publisher id — covers every Awin-network partner program
         // declared in directory.config.ts (affiliates.partners).
         awinAffid: process.env.NUXT_PUBLIC_AFFILIATE_AWIN_AFFID || "",
@@ -649,7 +652,7 @@ export default defineNuxtConfig({
 
     // === CORS ===
     corsHandler: {
-      origin: "https://example-directory.com",
+      origin: directoryConfig.url,
       methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
       preflight: { statusCode: 204 },
     },
@@ -793,8 +796,14 @@ export default defineNuxtConfig({
     // (sending Accept-Language) gets redirected to locale-prefixed URLs that don't match declared
     // canonicals. The manual locale switcher in the header handles UX; hreflang covers SEO.
     detectBrowserLanguage: false,
-    // Active subset of I18N_LOCALE_META (top of file) — inactive locales keep
-    // their translation files on disk but are not routed.
-    locales: directoryConfig.locales.map((code) => ({ code, ...I18N_LOCALE_META[code] })),
+    // Active subset of SHIPPED_LOCALES (shared/locale-meta.ts) — inactive
+    // locales keep their translation files on disk but are not routed.
+    // file: each shipped locale maps 1:1 to i18n/locales/<code>.json.
+    locales: directoryConfig.locales.map((code) => ({
+      code,
+      file: `${code}.json`,
+      language: SHIPPED_LOCALES[code].language,
+      name: SHIPPED_LOCALES[code].name,
+    })),
   },
 });

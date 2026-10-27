@@ -5,7 +5,7 @@
  *  ✏️  Edit this file to instantiate the template.
  *
  *  Everything a new directory must provide is declared HERE and nowhere else:
- *  brand, locales, entity vocabulary, sample taxonomy, affiliate programs and
+ *  brand, locales, sample taxonomy, billing plans, affiliate programs and
  *  products, ad slots, editorial silos, scraping sources and seed cities.
  *  nuxt.config.ts and the shared/ engines consume this object — instantiating
  *  a niche should not require touching engine code.
@@ -82,18 +82,44 @@ export interface AffiliateProductConfig {
   alt?: { partner: string; queries: LocalizedText };
 }
 
-/** Display vocabulary for a core entity, per locale. */
-export interface EntityVocabulary {
-  singular: LocalizedText;
-  plural: LocalizedText;
+/** One paid plan — Stripe product id + fallback pricing-table copy. */
+export interface BillingPlan {
+  /**
+   * Stripe product id — MUST match the product created in the Stripe
+   * dashboard. Checkout composes the price lookup keys
+   * `${id}_monthly` / `${id}_yearly`; keep it a lowercase slug
+   * (letters, digits, hyphens; underscore only when deliberate).
+   */
+  id: string;
+  /** Card title in the pricing table. */
+  title: string;
+  /** One-line pitch shown under the title. */
+  description: string;
+  /** Display prices (monthly / yearly, in the Stripe account currency). */
+  monthly: number;
+  yearly: number;
+  /** Mark as the highlighted "most popular" card (badge + emphasized CTA). */
+  highlight?: boolean;
+  /** Feature bullets listed on the card. */
+  features: readonly string[];
 }
 
-/** One entry of the sample category taxonomy. */
+/**
+ * One entry of the category taxonomy — the SINGLE SOURCE for the editorial
+ * catalog. shared/activities.ts derives its runtime structures (catalog,
+ * aliases, families…) from these entries; never edit activities.ts by hand.
+ */
 export interface TaxonomyCategory {
-  /** Canonical slug — portable identity, also the default-locale URL slug. */
+  /** Canonical English slug — portable identity, also the default-locale URL slug. */
   slug: string;
-  /** Display labels per locale. */
+  /** English canonical display name. */
+  name: string;
+  /** Display labels per locale (`en` should mirror `name`). */
   labels: LocalizedText;
+  /** Localized URL slugs (a locale without an entry falls back to `slug`). */
+  localeSlugs?: Partial<Record<ConfigLocale, string>>;
+  /** Historical / env-specific primary slugs that still identify this category. */
+  legacySlugs?: readonly string[];
 }
 
 export interface DirectoryConfig {
@@ -107,46 +133,58 @@ export interface DirectoryConfig {
   defaultLocale: ConfigLocale;
   /**
    * Active locales, in display order. First inactive-locale rule: every code
-   * here must exist in I18N_LOCALE_META (nuxt.config.ts) and have a
+   * here must exist in SHIPPED_LOCALES (shared/locale-meta.ts) and have a
    * i18n/locales/<code>.json file. fr MUST stay in the list (default locale).
    */
   locales: readonly ConfigLocale[];
 
   /**
-   * Vocabulary for the two core entities — what future components call the
-   * listed thing and its grouping (the template ships "venue" + "category").
-   * Fill with the niche's words (e.g. club/serie, spot/spot-type…).
-   */
-  entity: {
-    /** The listed item (a business / place). */
-    venue: EntityVocabulary;
-    /** The grouping the item belongs to. */
-    category: EntityVocabulary;
-  };
-
-  /**
-   * Sample category taxonomy — three neutral categories that exercise every
-   * category-driven surface (hubs, filters, guides, sitemap).
-   * ⚠ COUPLING: shared/activities.ts is neutralized to exactly these 3 slugs
-   * (its catalog powers DB-matching helpers). When instantiating, replace the
-   * categories HERE and in activities.ts together.
+   * Category taxonomy — the SINGLE SOURCE of truth for the editorial catalog.
+   * shared/activities.ts derives ALL of its runtime data (ACTIVITY_CATALOG,
+   * aliases, junk/alias-only sets, families, most-searched list, seed ids)
+   * from these fields: instantiating a niche REPLACES taxonomy.* here and
+   * touches no engine code. The sample data ships the three neutral
+   * categories (fitness / yoga / spa) that exercise every category-driven
+   * surface (hubs, filters, guides, sitemap).
    */
   taxonomy: {
+    /** Canonical categories. Match DB rows via English `slug` — never by numeric id. */
     categories: readonly TaxonomyCategory[];
+    /** Alias slug/name → canonical English slug (never listed as filter options). */
+    aliases: Readonly<Record<string, string>>;
+    /** Pure-alias slugs — excluded from filter lists when a canonical row exists. */
+    aliasOnlySlugs: readonly string[];
+    /** Known junk rows (venue names wrongly inserted as activities). */
+    junkSlugs: readonly string[];
+    /**
+     * Discipline families for hub "similar categories" and mega-menu
+     * descriptions (content-architecture.md §4.1). Not the navbar layout —
+     * chrome is compact. `labelKey` values are i18n keys each instantiation
+     * defines.
+     */
+    families: ReadonlyArray<{
+      id: string;
+      labelKey: string;
+      categories: readonly string[];
+    }>;
+    /** Curated "most searched" categories for compact surfaces (data-backed by GSC category-query traffic). */
+    mostSearched: readonly string[];
+    /**
+     * Fixed seed ids per canonical slug — for DBs created from fixed-ID
+     * migrations ONLY (e.g. the scraping constants). Do NOT use for prod
+     * identity: ids differ between local and prod.
+     */
+    seedIds: Readonly<Record<string, number>>;
   };
 
   /**
-   * Affiliate monetization — programs, products, disclosure.
+   * Affiliate monetization — programs, products, kit.
    * Mechanics (URL building, sub-tracking, availability gating) live in
    * shared/affiliates.ts and never need editing to change the DATA here.
+   * The mandatory disclosure is TRANSLATABLE LEGAL COPY and lives ONLY in
+   * the locale files (i18n key `affiliate.disclosure`) — never here.
    */
   affiliates: {
-    /**
-     * Mandatory disclosure shown next to every affiliate block
-     * (FR: loi "confiance dans l'économie numérique"). The components read
-     * the i18n key `affiliate.disclosure` — keep both in sync.
-     */
-    disclosure: LocalizedText;
     /**
      * Partner registry (Amazon is built-in as the DEFAULT destination and is
      * not listed here). Each entry: label + per-locale program map.
@@ -174,6 +212,20 @@ export interface DirectoryConfig {
   };
 
   /**
+   * Billing — Stripe plan vocabulary. The plan ids here are the SINGLE
+   * SOURCE for the session `plan` union (shared/types/auth.d.ts), the
+   * fallback pricing table (app/composables/useStripe.ts) and the seeded
+   * dev DB (server/db/seed.ts). Create Stripe products with EXACTLY these
+   * ids and price lookup keys `${id}_monthly` / `${id}_yearly`.
+   */
+  billing: {
+    /** Plan id of the free tier — never listed in `plans`, never checked out. */
+    freePlanId: string;
+    /** Paid plans, cheapest first (display order of the pricing table cards). */
+    plans: readonly BillingPlan[];
+  };
+
+  /**
    * Advertising (AdSense via @nuxt/scripts, first-party proxy). Empty values
    * ⇒ nothing loads and no ad slot renders.
    * Environment variables (runtime, override these defaults):
@@ -197,20 +249,22 @@ export interface DirectoryConfig {
 
   /**
    * Editorial content config.
-   * siloTopics: per-niche editorial clusters for guides/blog planning.
-   * PLACEHOLDER — the template ships none; fill during instantiation.
-   * (Note: shared/silo.ts still hardcodes the spoke-type engine vocabulary.)
+   * siloSpokes: per-niche silo spoke vocabulary — the URL segments reserved
+   * under /categories/<category>/<spoke> (shared/silo.ts derives its spoke
+   * types, entry types and reserved slugs from this list). Labels live in
+   * the i18n keys `guide.types.<slug>` — never in this config.
    */
   content: {
-    siloTopics: readonly string[];
+    siloSpokes: readonly string[];
   };
 
   /**
    * Data acquisition.
-   * sources: reference scraping adapters kept in the template. MUST match the
-   * adapters' `meta.id` in server/services/scraping/sources/registry.ts —
-   * the registry does not import this config (wiring it is a future step),
-   * so keep the two in sync by hand.
+   * sources: ids of the ACTIVE scraping adapters. Adapters live as CODE in
+   * server/services/scraping/sources/ (registered in registry.ts, ids
+   * mirrored in sources/ids.ts) — this list only SELECTS which of them run:
+   * the registry validates it at boot (unknown id ⇒ error) and
+   * getAllSources() returns exactly this subset.
    */
   scraping: {
     sources: readonly string[];
@@ -233,30 +287,92 @@ export const directoryConfig = {
   defaultLocale: "fr",
   locales: ["fr", "en"],
 
-  entity: {
-    venue: {
-      singular: { fr: "salle", en: "venue" },
-      plural: { fr: "salles", en: "venues" },
-    },
-    category: {
-      singular: { fr: "catégorie", en: "category" },
-      plural: { fr: "catégories", en: "categories" },
-    },
-  },
-
   taxonomy: {
     categories: [
-      { slug: "fitness", labels: { fr: "Fitness", en: "Fitness" } },
-      { slug: "yoga", labels: { fr: "Yoga", en: "Yoga" } },
-      { slug: "spa", labels: { fr: "Spa", en: "Spa" } },
+      {
+        slug: "fitness",
+        name: "Fitness",
+        labels: {
+          fr: "Fitness",
+          en: "Fitness",
+          de: "Fitness",
+          es: "Fitness",
+          it: "Fitness",
+          pt: "Fitness",
+        },
+        localeSlugs: {
+          fr: "fitness",
+          de: "fitness",
+          es: "fitness",
+          it: "fitness",
+          pt: "fitness",
+        },
+      },
+      {
+        slug: "yoga",
+        name: "Yoga",
+        labels: {
+          fr: "Yoga",
+          en: "Yoga",
+          de: "Yoga",
+          es: "Yoga",
+          it: "Yoga",
+          pt: "Yoga",
+        },
+        localeSlugs: {
+          fr: "yoga",
+          de: "yoga",
+          es: "yoga",
+          it: "yoga",
+          pt: "yoga",
+        },
+      },
+      {
+        slug: "spa",
+        name: "Spa",
+        labels: {
+          fr: "Spa",
+          en: "Spa",
+          de: "Spa",
+          es: "Spa",
+          it: "Spa",
+          pt: "Spa",
+        },
+        localeSlugs: {
+          fr: "spa",
+          de: "spa",
+          es: "spa",
+          it: "spa",
+          pt: "spa",
+        },
+      },
     ],
+    aliases: {
+      // Fitness
+      gym: "fitness",
+      "salle-de-sport": "fitness",
+      fitnessstudio: "fitness",
+      // Yoga
+      "hatha-yoga": "yoga",
+      vinyasa: "yoga",
+      // Spa
+      wellness: "spa",
+      "bien-etre": "spa",
+    },
+    aliasOnlySlugs: ["gym", "wellness"],
+    junkSlugs: [],
+    families: [
+      {
+        id: "wellness",
+        labelKey: "nav.families.wellness",
+        categories: ["fitness", "yoga", "spa"],
+      },
+    ],
+    mostSearched: ["fitness", "yoga", "spa"] as const,
+    seedIds: { fitness: 1, yoga: 2, spa: 3 } as const,
   },
 
   affiliates: {
-    disclosure: {
-      fr: "Liens affiliés. Une commission peut être versée si vous achetez.",
-      en: "Affiliate links. We may earn a commission if you buy.",
-    },
     partners: {
       // EXAMPLE partner — per-country programs, one network each.
       decathlon: {
@@ -322,6 +438,45 @@ export const directoryConfig = {
     kit: ["yoga-mat", "spa-robe", "fitness-bands"],
   },
 
+  // SAMPLE pricing — neutral placeholder copy. Replace titles/descriptions/
+  // features with the niche's offer; keep plan ids matching the Stripe
+  // products created per instantiation (lowercase slug, used in lookup keys).
+  billing: {
+    freePlanId: "free",
+    plans: [
+      {
+        id: "premium",
+        title: "Premium",
+        description: "Customize your venue page.",
+        monthly: 9.99,
+        yearly: 99.99,
+        highlight: true,
+        features: [
+          "Add & customize venue page",
+          "Propose event banners",
+          "Manage venue information",
+          "Update schedules & activities",
+          "Upload venue images",
+        ],
+      },
+      {
+        id: "premium_pro",
+        title: "Premium Pro",
+        description: "Maximum control. Advanced features.",
+        monthly: 19.99,
+        yearly: 199.99,
+        features: [
+          "Everything in Premium",
+          "Appointment & inscription section",
+          "Coach listing & management",
+          "Advanced analytics",
+          "Priority support",
+          "Custom branding options",
+        ],
+      },
+    ] as const,
+  },
+
   ads: {
     adsense: {
       client: "",
@@ -334,17 +489,25 @@ export const directoryConfig = {
   },
 
   content: {
-    siloTopics: [
-      // PLACEHOLDER — add per-niche editorial clusters, e.g.:
-      // "beginner-guides", "equipment-guides", "city-guides"
-    ],
+    siloSpokes: [
+      "guide",
+      "choisir-venue",
+      "comparer",
+      "tarifs",
+      "equipement",
+      "techniques",
+    ] as const,
   },
 
   scraping: {
-    // Keep in sync with server/services/scraping/sources/registry.ts meta.id.
+    // Active adapters — validated against sources/registry.ts at boot; the
+    // instantiation contract test asserts coherence in the unit lane.
     sources: ["masalledesport", "fitnesspark"],
     seedCities: ["Paris", "Berlin", "London", "Barcelona", "Rome", "Lisbon"],
   },
 } satisfies DirectoryConfig;
+
+/** Ad slot placement names — derived from the configured AdSense slots. */
+export type AdPlacement = keyof typeof directoryConfig.ads.adsense.slots;
 
 export default directoryConfig;

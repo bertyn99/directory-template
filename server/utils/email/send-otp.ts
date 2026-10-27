@@ -1,4 +1,5 @@
 import { getPlunkClient } from "../email";
+import { directoryConfig } from "~~/directory.config";
 import type { H3Event } from "h3";
 
 interface OTPEmailTemplate {
@@ -35,7 +36,7 @@ export async function sendOTPEmail(event: H3Event, email: string, otp: string) {
   }
 
   const template = getOTPEmailTemplate(otp, config.otp.expiryMinutes || 10);
-  const fromEmail = config.email?.from || "noreply@example-directory.com";
+  const fromEmail = config.email?.from || `noreply@${new URL(directoryConfig.url).host}`;
 
   try {
     const result = await plunk.emails.send({

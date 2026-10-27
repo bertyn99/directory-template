@@ -19,11 +19,11 @@ describe("siblingCategorySlugs", () => {
 describe("silo helpers", () => {
   it("sorts silo entries by the canonical type order", () => {
     const sorted = sortSiloEntries([
-      { type: "ecoles", title: "E" },
+      { type: "comparer", title: "C" },
       { type: "guide", title: "G" },
-      { type: "choisir-venue", title: "C" },
+      { type: "choisir-venue", title: "V" },
     ]);
-    expect(sorted.map(entry => entry.type)).toEqual(["guide", "choisir-venue", "ecoles"]);
+    expect(sorted.map(entry => entry.type)).toEqual(["guide", "choisir-venue", "comparer"]);
   });
 
   it("excerpts markdown to a word cap without markup", () => {

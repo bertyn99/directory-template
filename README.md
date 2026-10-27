@@ -18,7 +18,7 @@ Stack: **Nuxt 4 · Nuxt UI v4 · Drizzle ORM (PostgreSQL) · nuxt-auth-utils · 
 | Auth & dashboard | Email/password + OTP reset, venue owner dashboard, franchise management, admin panels, RBAC |
 | SEO | Strict i18n SEO (hreflang), sitemap with alternates, OG image generation, IndexNow, robots rules, per-page schema.org |
 | Content | Nuxt Content v3 blog + category-guide collections (fr/en, prerendered) |
-| Tests | Vitest projects: unit (107) · component (20) · integration (PGlite in-memory Postgres) · Playwright e2e |
+| Tests | Vitest projects: unit (120) · component (20) · integration (PGlite in-memory Postgres) · Playwright e2e |
 
 ## Quickstart
 
@@ -33,12 +33,12 @@ pnpm dev              # → localhost:3000
 ## Instantiate a new directory
 
 1. Copy this repo to the new app.
-2. Edit **`directory.config.ts`** — brand, url, locales, entity vocabulary, taxonomy, affiliates, ad slots, silo topics, scraping sources + seed cities.
-3. Replace/neutralize `i18n/locales/` (fr+en verified; de/es/it/pt are unverified drafts — see `i18n/README.md`).
-4. Replace sample `shared/activities.ts` catalog + taxonomy + seed cities together.
-5. Add your scraping sources (replace the two reference adapters).
-6. Create Stripe products matching the `premium` / `premium_pro` plan ids.
-7. Replace sample content (`content/{fr,en}/blog/` + `content/{fr,en}/category-guides/`).
+2. Edit **`directory.config.ts`** — brand, url, locales, taxonomy (categories/aliases/families), affiliates, billing plans, ad slots, silo spokes, scraping sources + seed cities.
+3. Replace/neutralize `i18n/locales/` (fr+en verified; de/es/it/pt are unverified drafts — see `i18n/README.md`) and the sample content (`content/{fr,en}/blog/` + `content/{fr,en}/category-guides/`).
+4. Add your scraping sources (adapters + registry + `sources/ids.ts` mirror; list the ids in the config — the registry validates them at boot).
+5. Create Stripe products matching the `billing.plans[].id` ids (price lookup keys `${id}_monthly` / `${id}_yearly`).
+
+Done — zero engine-code edits: `shared/` engines (catalog, nav, silo routes, affiliates, sitemap) derive everything from the config, and `pnpm test:unit` runs an instantiation contract test that fails fast on incoherent config.
 
 Then re-theme in `app/assets/css/main.css` + `app/app.config.ts` only — component code never changes (see `docs/design-system.md`).
 

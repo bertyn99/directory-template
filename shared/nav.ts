@@ -1,3 +1,5 @@
+import { directoryConfig } from '../directory.config'
+import { SHIPPED_LOCALES } from './locale-meta'
 import { isContentLocale, type ContentLocale } from './silo'
 
 export interface LocaleMenuItem {
@@ -6,25 +8,31 @@ export interface LocaleMenuItem {
   code: ContentLocale
 }
 
-export const LOCALE_MENU_ITEMS: LocaleMenuItem[] = [
-  { label: 'FR', icon: 'i-flag:fr-4x3', code: 'fr' },
-  { label: 'EN', icon: 'i-flag:us-4x3', code: 'en' },
-  { label: 'DE', icon: 'i-flag:de-4x3', code: 'de' },
-  { label: 'ES', icon: 'i-flag:es-4x3', code: 'es' },
-  { label: 'IT', icon: 'i-flag:it-4x3', code: 'it' },
-  { label: 'PT', icon: 'i-flag:pt-4x3', code: 'pt' },
-]
+/**
+ * Locale switcher entries — ACTIVE locales only (directoryConfig.locales
+ * ∩ SHIPPED_LOCALES, in config display order). Inactive locales keep their
+ * translation files but are never offered for navigation.
+ */
+export const LOCALE_MENU_ITEMS: LocaleMenuItem[] = directoryConfig.locales
+  .filter(code => code in SHIPPED_LOCALES)
+  .map(code => ({
+    label: code.toUpperCase(),
+    icon: SHIPPED_LOCALES[code].flag,
+    code,
+  }))
 
-export const COMPARATIF_PATHS: Record<ContentLocale, string> = {
+const COMPARATIF_EN = '/blog/niche-directory-vs-marketplace'
+
+/**
+ * Per-locale path of the comparatif pillar article. Active locales without a
+ * translated entry fall back to the English article (inactive-locale visitors
+ * never hit this — the switcher only offers active locales).
+ */
+export const COMPARATIF_PATHS: Partial<Record<ContentLocale, string>> = {
   fr: '/blog/annuaire-niche-vs-marketplace',
-  // de/es/it/pt have no translated placeholder yet — fall back to the English article
-  de: '/blog/niche-directory-vs-marketplace',
-  en: '/blog/niche-directory-vs-marketplace',
-  es: '/blog/niche-directory-vs-marketplace',
-  it: '/blog/niche-directory-vs-marketplace',
-  pt: '/blog/niche-directory-vs-marketplace',
+  en: COMPARATIF_EN,
 }
 
 export function comparatifPath(locale: string): string {
-  return isContentLocale(locale) ? COMPARATIF_PATHS[locale] : COMPARATIF_PATHS.fr
+  return (isContentLocale(locale) ? COMPARATIF_PATHS[locale] : undefined) ?? COMPARATIF_EN
 }
