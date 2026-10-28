@@ -11,6 +11,6 @@
  *
  * Add a new adapter here AND register it in registry.ts.
  */
-export const SCRAPING_SOURCE_IDS = ["masalledesport", "fitnesspark"] as const;
+export const SCRAPING_SOURCE_IDS = ["masalledesport", "fitnesspark", "osm-overpass"] as const;
 
 export type ScrapingSourceId = (typeof SCRAPING_SOURCE_IDS)[number];

@@ -276,6 +276,7 @@
     "categories": "Categorias",
     "openingHours": "Horário de funcionamento",
     "website": "Website",
+    "bookingCta": "Reservar",
     "location": "Localização",
     "profile": "Perfil do venuee",
     "lastUpdate": "Última atualização",
@@ -287,7 +288,8 @@
     "mapHint": "Clique para abrir no seu aplicativo de mapas",
     "subscription": "Subscrição",
     "socialMedia": "Redes sociais",
-    "seoSuffix": "horários, telefone e preços"
+    "seoSuffix": "horários, telefone e preços",
+    "groupMember": "Membro do grupo {name}"
   },
   "blog": {
     "title": "Últimas publicações",
@@ -329,12 +331,36 @@
     "NL": "em"
   },
   "eu_city_names": {
-    "Paris": "Paris",
-    "Berlin": "Berlim",
-    "London": "Londres",
+    "Amsterdam": "Amesterdão",
     "Barcelona": "Barcelona",
+    "Berlin": "Berlim",
+    "Birmingham": "Birmingham",
+    "Bordeaux": "Bordéus",
+    "Brussels": "Bruxelas",
+    "Cologne": "Colónia",
+    "Glasgow": "Glasgow",
+    "Hamburg": "Hamburgo",
+    "Lille": "Lille",
+    "Lisbon": "Lisboa",
+    "London": "Londres",
+    "Lyon": "Lyon",
+    "Madrid": "Madrid",
+    "Marseille": "Marselha",
+    "Milan": "Milão",
+    "Montpellier": "Montpellier",
+    "Munich": "Munique",
+    "Nantes": "Nantes",
+    "Naples": "Nápoles",
+    "Nice": "Nice",
+    "Paris": "Paris",
+    "Porto": "Porto",
     "Rome": "Roma",
-    "Lisbon": "Lisboa"
+    "Saint-Denis": "Saint-Denis",
+    "Strasbourg": "Estrasburgo",
+    "Toulouse": "Toulouse",
+    "Valencia": "Valência",
+    "Vienna": "Viena",
+    "Zurich": "Zurique"
   },
   "auth": {
     "login": {
@@ -342,11 +368,34 @@
       "signUp": "Registar"
     }
   },
+  "billing": {
+    "cycle": {
+      "monthly": "Mensal",
+      "yearly": "Anual"
+    },
+    "free": {
+      "title": "Visitante",
+      "description": "Pesquisa e descobre venues",
+      "price": "Grátis",
+      "cta": "Começar",
+      "features": {
+        "search": "Pesquisa venues por localização",
+        "profiles": "Consulta os perfis de venues",
+        "activities": "Explora atividades e horários",
+        "reviews": "Lê avaliações"
+      }
+    },
+    "mostPopular": "Mais popular",
+    "buyNow": "Comprar agora",
+    "signInToBuy": "Inicia sessão para comprar",
+    "manageSubscription": "Gerir a subscrição"
+  },
   "affiliate": {
     "kitTitle": "Equipamento para começar",
     "nutritionTitle": "Energia para o treino",
     "nutritionEyebrow": "Nutrição",
     "shopCta": "Comprar",
+    "giftCta": "Oferecer",
     "alsoOn": "Também na {partner}",
     "disclosure": "Links de afiliado. Podemos ganhar comissão se comprar."
   },
@@ -473,5 +522,12 @@
       "matchCandidates": "Candidatos de matching",
       "enrichVenues": "Enriquecimento de venues"
     }
+  },
+  "groups": {
+    "badge": "Grupo",
+    "breadcrumb": "Grupos",
+    "venueCount": "{count} espaços",
+    "allVenuesBy": "Todos os espaços de {name}",
+    "seoTitle": "{name} — {count} espaços"
   }
 }

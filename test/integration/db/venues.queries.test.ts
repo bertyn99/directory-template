@@ -103,3 +103,82 @@ describe('searchVenues against the production schema', () => {
     expect(none.totalCount).toBe(0)
   })
 })
+
+describe('searchVenues facet filters (venues.attributes JSONB)', () => {
+  it('matches boolean facets on the true side only', async () => {
+    const yes = await seedVenue(db, {
+      name: 'Sunday Venue',
+      attributes: { 'open-sundays': true, ambiance: 'family' },
+    })
+    await seedVenue(db, {
+      name: 'Closed Sundays Venue',
+      attributes: { 'open-sundays': false, ambiance: 'family' },
+    })
+    await seedVenue(db, { name: 'No Attributes Venue' })
+
+    const res = await searchVenues({ facets: [{ key: 'open-sundays', value: 'true' }] })
+
+    expect(res.venues.map(c => c.id)).toEqual([yes.id])
+    expect(res.totalCount).toBe(1)
+  })
+
+  it('matches enum facets on whitelisted values', async () => {
+    await seedVenue(db, { name: 'Family Spa', attributes: { ambiance: 'family' } })
+    const relaxed = await seedVenue(db, { name: 'Relaxed Spa', attributes: { ambiance: 'relaxed' } })
+    await seedVenue(db, { name: 'Unlisted Spa', attributes: { ambiance: 'underground' } })
+
+    const res = await searchVenues({ facets: [{ key: 'ambiance', value: 'relaxed' }] })
+
+    expect(res.venues.map(c => c.id)).toEqual([relaxed.id])
+  })
+
+  it('AND-composes multiple facet filters', async () => {
+    const both = await seedVenue(db, {
+      name: 'Group Relaxed Venue',
+      attributes: { 'group-classes': true, ambiance: 'relaxed' },
+    })
+    await seedVenue(db, {
+      name: 'Only Group Venue',
+      attributes: { 'group-classes': true, ambiance: 'performance' },
+    })
+
+    const res = await searchVenues({
+      facets: [
+        { key: 'group-classes', value: 'true' },
+        { key: 'ambiance', value: 'relaxed' },
+      ],
+    })
+
+    expect(res.venues.map(c => c.id)).toEqual([both.id])
+  })
+
+  it('never matches undeclared keys or missing attributes (jsonb guard)', async () => {
+    await seedVenue(db, { name: 'Injected Venue', attributes: { 'group-classes': true } })
+    await seedVenue(db, { name: 'Plain Venue' })
+
+    const res = await searchVenues({ facets: [{ key: 'unknown-key', value: 'true' }] })
+
+    expect(res.totalCount).toBe(0)
+    expect(res.venues).toEqual([])
+  })
+
+  it('combines facet filters with the activity filter', async () => {
+    const act = await seedActivity(db, 'spa')
+    const match = await seedVenue(db, {
+      name: 'Spa With Ambiance',
+      attributes: { ambiance: 'family' },
+    })
+    const noAmbiance = await seedVenue(db, { name: 'Spa Without Ambiance' })
+    await seedVenue(db, { name: 'Ambiance Without Spa', attributes: { ambiance: 'family' } })
+    await linkVenueActivity(db, match.id, act.id)
+    await linkVenueActivity(db, noAmbiance.id, act.id)
+
+    const res = await searchVenues({
+      activityIds: [act.id],
+      facets: [{ key: 'ambiance', value: 'family' }],
+    })
+
+    expect(res.venues.map(c => c.id)).toEqual([match.id])
+    expect(res.totalCount).toBe(1)
+  })
+})

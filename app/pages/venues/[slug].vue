@@ -12,8 +12,22 @@
                             <UIcon name="i-heroicons-map-pin" class="text-primary" />
                             <span>{{ locationLabel }}</span>
                         </p>
+                        <NuxtLink
+                            v-if="venue.franchise?.slug"
+                            :to="localePath(`/groups/${venue.franchise.slug}`)"
+                            class="inline-flex items-center gap-1 text-sm text-primary underline decoration-primary decoration-2 underline-offset-4"
+                        >
+                            {{ $t('venues.groupMember', { name: venue.franchise.name }) }}
+                        </NuxtLink>
                     </div>
                     <div class="flex flex-wrap gap-3">
+                        <!-- Booking is the primary commercial action — leads the
+                             actions row. Renders nothing without a booking_url;
+                             sponsored partners add rel + disclosure inside. -->
+                        <VenueBookingCta
+                            :booking-url="venue.bookingUrl"
+                            :booking-partner="venue.bookingPartner"
+                        />
                         <UButton
 v-if="venue.website" :href="ensureUrl(venue.website)" target="_blank" rel="noopener noreferrer"
                             color="primary" class="rounded-sm">
@@ -95,6 +109,19 @@ v-else
                             </div>
                         </div>
 
+                        <!-- Attribute chips — config-declared facets ONLY
+                             (directoryConfig.taxonomy.facets): booleans
+                             render when true, enums when the stored value is
+                             whitelisted; unknown keys in venue data are never
+                             rendered. -->
+                        <div v-if="attributeChips.length" class="mt-6 flex flex-wrap gap-2">
+                            <UBadge
+v-for="chip in attributeChips" :key="chip.label" variant="soft"
+                                class="rounded-sm border border-default text-xs font-medium">
+                                {{ chip.label }}
+                            </UBadge>
+                        </div>
+
                         <div v-if="venue.subscription" class="mt-4 text-sm text-toned">
                             <span class="font-semibold text-default">{{ $t('venues.subscription') }}:</span> {{ venue.subscription }}
                         </div>
@@ -110,6 +137,30 @@ v-else
                         <div v-if="venue.tel" class="mt-2 text-sm text-toned">
                             <span class="font-semibold text-default">{{ $t('venues.tel') }}:</span> {{ venue.tel }}
                         </div>
+                    </UCard>
+
+                    <!-- Formulas (public prices) — currency/format from
+                         directoryConfig.billing (same Intl convention as
+                         useStripe). Renders only when the venue has formulas. -->
+                    <UCard v-if="venueFormulas.length" class="border border-default bg-default rounded-sm">
+                        <template #header>
+                            <h2 class="text-xl font-semibold text-default">{{ $t('venues.formulasTitle') }}</h2>
+                        </template>
+                        <ul class="space-y-3">
+                            <li
+v-for="formula in venueFormulas" :key="formula.id"
+                                class="flex items-center justify-between gap-4 border-b border-muted pb-3 last:border-0 last:pb-0">
+                                <div>
+                                    <p class="font-medium text-default">{{ formula.name }}</p>
+                                    <p v-if="formula.type" class="text-sm text-muted">{{ formula.type }}</p>
+                                </div>
+                                <p
+v-if="formula.price !== null"
+                                    class="whitespace-nowrap font-semibold text-default">
+                                    {{ formatPrice(Number(formula.price)) }}
+                                </p>
+                            </li>
+                        </ul>
                     </UCard>
 
                     <UCard v-if="venue.address" class="border border-default bg-default rounded-sm">
@@ -141,6 +192,19 @@ v-for="(hours, day) in openingHourFormated" :key="day"
                                 <span>{{ hours.from }} – {{ hours.to }}</span>
                             </li>
                         </ul>
+                    </UCard>
+
+                    <UCard v-if="equipmentsList.length" class="border border-default bg-default rounded-sm">
+                        <template #header>
+                            <h2 class="text-xl font-semibold text-default">{{ $t('venues.equipmentsTitle') }}</h2>
+                        </template>
+                        <div class="flex flex-wrap gap-2">
+                            <UBadge
+v-for="equipment in equipmentsList" :key="equipment" variant="soft"
+                                class="rounded-sm border border-default text-xs font-medium">
+                                {{ equipment }}
+                            </UBadge>
+                        </div>
                     </UCard>
 
                     <UCard v-if="venue.socialMedia" class="border border-default bg-default rounded-sm">
@@ -180,6 +244,13 @@ v-for="acces in (venue.access[locale] || venue.access.fr || venue.access.en || [
                     </UCard>
                 </div>
             </div>
+
+            <!-- Ad (venue-detail bottom) — first-party proxied AdSense, renders
+                 nothing until configured. Sits BELOW the whole venue content
+                 grid: never inside the venue's own info area (the description
+                 MDC can embed an affiliate ::equipment-kit, which an ad must
+                 never sit adjacent to). -->
+            <LazyAdsAdUnit placement="venueDetail" variant="leaderboard" hydrate-on-idle />
         </div>
     </UContainer>
 </template>
@@ -189,9 +260,11 @@ import {
     findActivityDefinition,
     getActivityLocaleSlug,
 } from '~~/shared/activities'
+import { facetLabelKey, facetValueLabelKey } from '~~/shared/facets'
+import { directoryConfig } from '~~/directory.config'
 
 const route = useRoute();
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 const localePath = useLocalePath()
 const requestUrl = useRequestURL()
 
@@ -259,6 +332,61 @@ const activityLinks = computed(() => {
 })
 
 const activitiesCount = computed(() => activitiesList.value.length)
+
+// --- Attribute chips (config-declared facets only) ---------------------------
+// Only keys declared in directoryConfig.taxonomy.facets are rendered: a
+// boolean chip when the attribute is exactly true, an enum chip when the
+// stored value is in the facet's whitelisted values. Labels are i18n
+// `facet.<key>` (booleans) / `facet.<key>.<value>` (enum values, see
+// shared/facets.ts for the key shapes), falling back to the humanized
+// key/value so a partially-translated instantiation still reads cleanly.
+function humanize(value: string): string {
+    return value
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+function facetLabel(facet: typeof directoryConfig.taxonomy.facets[number]): string {
+    const keyI18n = facetLabelKey(facet)
+    return te(keyI18n) ? t(keyI18n) : humanize(facet.key)
+}
+function facetValueLabel(facet: typeof directoryConfig.taxonomy.facets[number], value: string): string {
+    const valueI18n = facetValueLabelKey(facet, value)
+    return te(valueI18n) ? t(valueI18n) : humanize(value)
+}
+
+const attributeChips = computed(() => {
+    const attrs = venue.value?.attributes
+    if (!attrs || typeof attrs !== 'object' || Array.isArray(attrs)) return []
+    return directoryConfig.taxonomy.facets.flatMap((facet) => {
+        const value = (attrs as Record<string, unknown>)[facet.key]
+        if (facet.kind === 'boolean') {
+            return value === true ? [{ label: facetLabel(facet) }] : []
+        }
+        if (typeof value === 'string' && facet.values?.includes(value)) {
+            return [{ label: facetValueLabel(facet, value) }]
+        }
+        return []
+    })
+})
+
+// --- Public formulas (prices) + equipments ----------------------------------
+const venueFormulas = computed(() => venue.value?.formulas ?? [])
+const equipmentsList = computed(() => venue.value?.equipments ?? [])
+
+// Price formatting — same convention as useStripe.formatPrice: Intl with the
+// config currency + display locale; a malformed currency code in the config
+// degrades to "amount CODE" instead of crashing the venue page.
+function formatPrice(amount: number): string {
+    try {
+        return new Intl.NumberFormat(locale.value, {
+            style: 'currency',
+            currency: directoryConfig.billing.currency,
+        }).format(amount)
+    } catch {
+        return `${amount} ${directoryConfig.billing.currency}`
+    }
+}
+
 const locationLabel = computed(() => venue.value?.address ? formatAddress(venue.value.address) : t('venues.location'))
 const updatedLabel = computed(() => {
     if (!venue.value?.updatedAt) return null
@@ -301,19 +429,20 @@ const openingHoursSpec = computed(() => {
   return specs.length > 0 ? specs : undefined
 })
 
-// Dynamic SEO title — global titleTemplate appends "| Directory Template".
-// Suffix promises the practical data on the page (hours/phone/price) so the
-// snippet can intercept brand queries against the venue's own site (YGG-196).
+// Dynamic SEO title — global titleTemplate appends "| {brand}". Suffix
+// promises the practical data on the page (hours/phone/price) so the snippet
+// can intercept brand queries against the venue's own site (YGG-196). Brand
+// fallbacks come from directoryConfig.name (never a hardcoded brand).
 useSeoMeta({
-  title: () => venue.value ? `${venueName.value} — ${t('venues.seoSuffix')}` : 'Directory Template',
+  title: () => venue.value ? `${venueName.value} — ${t('venues.seoSuffix')}` : directoryConfig.name,
   description: () => {
     const intro = descriptionFormatedByLocale.value?.intro
-    return intro ? intro.substring(0, 160).replace(/<br>/g, ' ') : `${venueName.value} - Find venues on Directory Template`
+    return intro ? intro.substring(0, 160).replace(/<br>/g, ' ') : `${venueName.value} - Find venues on ${directoryConfig.name}`
   },
-  ogTitle: () => venue.value ? venueName.value : 'Directory Template',
+  ogTitle: () => venue.value ? venueName.value : directoryConfig.name,
   ogDescription: () => {
     const intro = descriptionFormatedByLocale.value?.intro
-    return intro ? intro.substring(0, 160).replace(/<br>/g, ' ') : `${venueName.value} - Find venues on Directory Template`
+    return intro ? intro.substring(0, 160).replace(/<br>/g, ' ') : `${venueName.value} - Find venues on ${directoryConfig.name}`
   },
   ogImage: () => venue.value?.searchPicture || '/img/og-default.jpg',
   ogUrl: () => `${requestUrl.origin}${requestUrl.pathname}`,

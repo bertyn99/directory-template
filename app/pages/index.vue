@@ -76,7 +76,7 @@ useSchemaOrg([
         '@type': ['WebPage','FAQPage'],
     }),
     defineWebSite({
-        name: 'Directory Template',
+        name: directoryConfig.name,
         url: directoryConfig.url,
         potentialAction: [
             defineSearchAction({

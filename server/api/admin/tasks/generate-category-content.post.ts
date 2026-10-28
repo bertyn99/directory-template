@@ -16,7 +16,7 @@ const categoryContentPayloadSchema = z.object({
  * Trigger the generate:category-content Nitro task.
  * Payload options:
  *   - force:    Regenerate content even if it already exists (default: false)
- *   - fields:   Limit generation to specific fields (techniques, keyPoints, competitions, equipments, contraindications, benefits, content)
+ *   - fields:   Limit generation to specific fields (techniques, keyPoints, equipments, contraindications, benefits, content)
  *   - locales:  Target locales (default: ["fr", "en"])
  */
 export default defineEventHandler(async (event) => {

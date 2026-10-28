@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { matchCityPublicSlug } from "~~/server/db/queries/cities";
 import {
   activities,
@@ -17,6 +18,7 @@ import {
   getActivityDisplayNameForRow,
 } from "~~/shared/activities";
 import { majorEuCityLookupNames, toMajorEuCityCards } from "~~/shared/major-eu-cities";
+import { parseFacetFilters, type FacetFilter } from "~~/shared/facets";
 import { z } from "zod";
 
 // Input validation schemas
@@ -26,12 +28,45 @@ export const searchVenuesInputSchema = z.object({
   zip: z.string().optional(),
   countryCode: z.string().optional(),
   activityIds: z.array(z.number()).optional().default([]),
+  // Raw `facet=key:value` params (repeated). Validated against the config
+  // facet whitelist (shared/facets.ts): an unknown key, a non-filterable key
+  // or a non-whitelisted value raises the same ZodError → 400 convention as
+  // every other invalid query parameter on this route.
+  facets: z
+    .array(z.string())
+    .optional()
+    .default([])
+    .transform((raw, ctx) => {
+      const parsed = parseFacetFilters(raw);
+      if (parsed === null) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Unknown facet filter (expected key:value from taxonomy.facets)",
+        });
+        return z.NEVER;
+      }
+      return parsed;
+    }),
   locale: z.string().optional().default("en"),
   page: z.number().int().positive().optional().default(1),
   pageSize: z.number().int().positive().max(100).optional().default(20),
 });
 
 export type SearchVenuesInput = z.infer<typeof searchVenuesInputSchema>;
+
+/**
+ * JSONB attribute conditions for validated facet filters, AND-composed by the
+ * caller. SQL shape: `attributes ->> key = value` (boolean facets only ever
+ * filter `value = 'true'`). Both key and value are BOUND params; the key has
+ * already been matched against the config whitelist (parseFacetFilters), so
+ * no client string ever becomes a JSONB path. A venue with NULL attributes
+ * (or a missing key) never matches.
+ */
+function facetAttributeConditions(facets: readonly FacetFilter[]): SQL[] {
+  return facets.map((facet) =>
+    sql`${venues.attributes} ->> ${facet.key} = ${facet.value}`,
+  );
+}
 
 /** Alias slugs that map to the same catalog category as the selected activity IDs */
 async function aliasSlugsForSelectedActivityIds(
@@ -130,6 +165,7 @@ export async function searchVenues(params: SearchVenuesInput): Promise<SearchVen
     zip,
     countryCode,
     activityIds = [],
+    facets = [],
     locale = "en",
     page = 1,
     pageSize = 20,
@@ -186,6 +222,11 @@ export async function searchVenues(params: SearchVenuesInput): Promise<SearchVen
       );
     }
   }
+
+  // Facet filters AND-compose like the activity filter above; the window
+  // count (count(*) over()) reads the same WHERE clause, so list + count
+  // stay pagination-consistent by construction.
+  filters.push(...facetAttributeConditions(facets));
 
   const whereClause = and(...filters);
 
@@ -291,6 +332,25 @@ export async function getVenueBySlug(slug: string) {
           },
         },
       },
+      // Public venue page surfaces: prices (formulas), equipment names and
+      // the venues.attributes JSONB (selected with the row itself).
+      formulas: true,
+      equipments: {
+        with: {
+          equipment: {
+            columns: {
+              name: true,
+            },
+          },
+        },
+      },
+      franchise: {
+        columns: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
     },
   });
 
@@ -301,6 +361,7 @@ export async function getVenueBySlug(slug: string) {
   return {
     ...result,
     activities: result.activities.map((ca) => ca.activity.name),
+    equipments: result.equipments.map((ve) => ve.equipment.name),
   };
 }
 

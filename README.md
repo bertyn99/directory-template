@@ -10,15 +10,15 @@ Stack: **Nuxt 4 · Nuxt UI v4 · Drizzle ORM (PostgreSQL) · nuxt-auth-utils · 
 
 | Area | What ships |
 |---|---|
-| Public site | Home, `/venues` + detail, `/categories` hub/detail/category×city, `/country/**` browsing, blog, silo guide spokes, legal/contact |
-| Taxonomy | `venueCategories` DB table (venue FK) + an editorial activity catalog driving `/categories` — samples: fitness, yoga, spa |
-| Data pipeline | Scraping framework (browser, parser, rate-limit, state) + 2 reference adapters (masalledesport, fitnesspark), ingestion → dedup/matching (rules + geocoding + AI) → admin review queue for unmatched candidates |
+| Public site | Home, `/venues` + detail, `/groups/[slug]` (franchise/group hubs), `/categories` hub/detail/category×city, `/country/**` browsing, blog, silo guide spokes, legal/contact |
+| Taxonomy | `venueCategories` DB table (venue FK) + an editorial activity catalog driving `/categories` — samples: fitness, yoga, spa. Per-venue structured attributes (`venues.attributes` JSONB + `taxonomy.facets`): config-declared boolean/enum facets rendered as detail-page chips, filterable via `?facet=key:value`, with public `formulas` (prices) + `equipments` sections on the venue page |
+| Data pipeline | Scraping framework (browser, parser, rate-limit, state) + 3 reference adapters (masalledesport, fitnesspark, OSM Overpass JSON no-browser archetype — unselected by default), ingestion → dedup/matching (rules + geocoding + AI) → admin review queue for unmatched candidates |
 | Ops | Nitro scheduled tasks (re-scrape, content generation, venue validation, AI enrichment, geocoding), Redis-backed caching/rate-limiting, scraper alerting |
-| Monetization | Stripe subscriptions (`premium` / `premium_pro` plans), AdSense slots, affiliate partner programs (per-locale, network-aware — Rakuten/Awin), all config-driven |
+| Monetization | Stripe subscriptions (`premium` / `premium_pro` plans), AdSense slots, affiliate partner programs (per-locale, network-aware — Rakuten/Awin; search OR direct landing mode), outbound booking CTAs (`booking.partners` — sponsored rel + disclosure vs plain outbound), all config-driven |
 | Auth & dashboard | Email/password + OTP reset, venue owner dashboard, franchise management, admin panels, RBAC |
 | SEO | Strict i18n SEO (hreflang), sitemap with alternates, OG image generation, IndexNow, robots rules, per-page schema.org |
 | Content | Nuxt Content v3 blog + category-guide collections (fr/en, prerendered) |
-| Tests | Vitest projects: unit (120) · component (20) · integration (PGlite in-memory Postgres) · Playwright e2e |
+| Tests | Vitest projects: unit (161) · component (31) · integration (PGlite in-memory Postgres) · Playwright e2e |
 
 ## Quickstart
 
@@ -33,7 +33,7 @@ pnpm dev              # → localhost:3000
 ## Instantiate a new directory
 
 1. Copy this repo to the new app.
-2. Edit **`directory.config.ts`** — brand, url, locales, taxonomy (categories/aliases/families), affiliates, billing plans, ad slots, silo spokes, scraping sources + seed cities.
+2. Edit **`directory.config.ts`** — brand, url, locales, taxonomy (categories/aliases/families + venue attribute `facets` and their `facet.*` i18n keys), affiliates, billing plans, ad slots, silo spokes, scraping sources + seed cities.
 3. Replace/neutralize `i18n/locales/` (fr+en verified; de/es/it/pt are unverified drafts — see `i18n/README.md`) and the sample content (`content/{fr,en}/blog/` + `content/{fr,en}/category-guides/`).
 4. Add your scraping sources (adapters + registry + `sources/ids.ts` mirror; list the ids in the config — the registry validates them at boot).
 5. Create Stripe products matching the `billing.plans[].id` ids (price lookup keys `${id}_monthly` / `${id}_yearly`).

@@ -63,6 +63,7 @@
                         {{ $t('home.subTitle') }}
                     </p>
                     <NuxtLink
+                        v-if="pillarPath"
                         :to="localePath(pillarPath)"
                         class="mb-6 md:mb-8 lg:mb-10 inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-white underline decoration-white/50 underline-offset-4 transition-colors duration-150 hover:decoration-white"
                     >
@@ -136,14 +137,16 @@ viewBox="0 0 1440 100" class="wave-svg w-full h-full text-gray-50 dark:text-gray
 
 <script setup>
 import { refDebounced } from '@vueuse/core'
-import { comparatifPath } from '~~/shared/nav'
+import { pillarPath as pillarPathFor } from '~~/shared/nav'
 const route = useRoute()
 const router = useRouter()
 const search = ref(null);
 const searchTerm = ref('');
 const localePath = useLocalePath()
 const { locale } = useI18n()
-const pillarPath = computed(() => comparatifPath(locale.value))
+// Pillar-article CTA — hidden entirely when the active locale has no
+// directoryConfig.content.pillarPaths entry (never a cross-locale link).
+const pillarPath = computed(() => pillarPathFor(locale.value))
 const isHome = computed(() => route.name?.includes('index__') ?? false)
 
 const searchTermDebounced = refDebounced(searchTerm, 200)

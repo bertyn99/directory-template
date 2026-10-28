@@ -52,7 +52,7 @@ const heading = computed(() => {
       </div>
       <UButton
         :to="pick.href"
-        :label="t('affiliate.shopCta')"
+        :label="t(pick.product.ctaKey)"
         color="primary"
         variant="solid"
         class="rounded-sm shrink-0"

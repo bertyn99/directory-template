@@ -1,20 +1,24 @@
 /**
- * Affiliate engine — Amazon (built-in default) + config-defined partners.
+ * Affiliate engine — Amazon (built-in) + config-defined partners, in search
+ * or direct link mode.
  *
  * DATA vs MECHANISM split:
  * - The product catalog, partner program maps and the sample kit are DATA,
  *   configured per instantiation in directory.config.ts (affiliates section).
- * - This module implements the MECHANISM only: URL building, per-network
- *   tracking wrappers (Rakuten deeplink / Awin cread.php), sub-tracking and
- *   availability gating. Changing niche/merchants never touches this file.
+ * - This module implements the MECHANISM only: URL building (storefront
+ *   search OR fixed direct landing), per-network tracking wrappers (Rakuten
+ *   deeplink / Awin cread.php), sub-tracking and availability gating.
+ *   Changing niche/merchants never touches this file.
  *
  * Template rules (do NOT break when extending):
  * - A partner button renders ONLY when the locale's program is fully
  *   configured (partnerProgramAvailable()): empty publisher/merchant id ⇒
+ *   hidden button; a DIRECT program with no landing URL for the locale ⇒
  *   hidden button. No traffic ever goes to a merchant we cannot be credited
  *   for.
- * - Amazon is the default destination; config partners are secondary buttons
- *   (product.alt) on the same card, never a second block.
+ * - Amazon is a DEFAULT destination (always renderable, tags optional);
+ *   each product picks its own `primary` partner (default amazon) and 0..n
+ *   `alts` — the hardcoded Amazon primary is gone.
  * - Sub-tracking: Rakuten u1 / Awin clickref = `<slot>-<placement>` (usually
  *   `<category-slug>-<placement>`).
  * - rel="sponsored noopener noreferrer" (AFFILIATE_REL) + the disclosure
@@ -23,13 +27,15 @@
  *   affiliate link (FR: loi "confiance dans l'économie numérique").
  * - Never surface promo codes (merchant program terms).
  *
- * Publisher tracking ids live in runtimeConfig (env). Links still resolve as
- * plain search URLs without them so the UI works before programs are
- * approved.
+ * Publisher tracking ids live in runtimeConfig (env). Search links still
+ * resolve as plain search URLs without them so the UI works before programs
+ * are approved; the buttons themselves are hidden in that case by
+ * partnerProgramAvailable(), so the untracked URL never ships.
  */
 
 import type {
   AffiliatePartnerConfig,
+  AffiliateProductConfig,
   ConfigLocale,
   LocalizedText,
   PartnerProgram,
@@ -56,10 +62,20 @@ export type AffiliatePartner =
 /** French-first localized copy (same shape as directory.config LocalizedText). */
 export type LocalizedCopy = LocalizedText;
 
+/** Per-locale fixed landing URLs (direct mode) — same shape as config `urls`. */
+export type LocalizedUrls = Partial<Record<ConfigLocale, string>>;
+
 /** A destination for a product on a specific partner. */
 export type AffiliateOffer = {
   partner: AffiliatePartner;
-  queries: LocalizedCopy;
+  /** Search query — REQUIRED for search-mode partners, unused for direct. */
+  queries?: LocalizedCopy;
+  /**
+   * Product-level direct landing URL per locale — overrides the partner
+   * program's own `urls` per locale (a product that IS a single landing
+   * offer). Ignored for search-mode partners and Amazon.
+   */
+  urls?: LocalizedUrls;
 };
 
 /** Per-subid token sent to the network for click-level attribution. */
@@ -140,9 +156,58 @@ function fallbackProgram(partner: string): PartnerProgram | undefined {
 }
 
 /**
- * True when the locale's program has every tracking id it needs — the ONLY
- * condition under which a partner button may render. This gating is a
- * template invariant: an empty id ⇒ hidden button, never an uncredited click.
+ * True when the network's tracking ids are present for this program — the
+ * "creditable" half of the gating (see partnerProgramAvailable).
+ */
+function programCreditable(program: PartnerProgram, tags: AffiliateTags): boolean {
+  return program.network === "rakuten"
+    ? Boolean(tags.rakutenSiteId)
+    : Boolean(tags.awinAffid && program.awinMid);
+}
+
+/** DIRECT-mode program (fixed landing URL per locale, no storefront search). */
+function isDirectProgram(program: PartnerProgram): boolean {
+  return program.linkMode === "direct";
+}
+
+/**
+ * The effective direct landing for a locale: the product-level URL first,
+ * then the program's own per-locale landing. Undefined ⇒ no landing for
+ * this locale.
+ */
+function directLanding(
+  program: PartnerProgram,
+  locale: ConfigLocale,
+  productUrls?: LocalizedUrls,
+): string | undefined {
+  return productUrls?.[locale] ?? program.urls?.[locale];
+}
+
+/**
+ * Pure program-level availability: tracking ids present (and, for DIRECT
+ * programs, a landing URL for the locale). Testable against synthetic
+ * programs; partnerProgramAvailable() is its name-based wrapper.
+ */
+export function programAvailable(
+  program: PartnerProgram,
+  locale: string,
+  tags: AffiliateTags,
+): boolean {
+  if (!programCreditable(program, tags)) {
+    return false;
+  }
+  if (isDirectProgram(program)) {
+    return Boolean(directLanding(program, normalizeLocale(locale)));
+  }
+  return true;
+}
+
+/**
+ * True when the locale's program has every tracking id it needs (and, for
+ * DIRECT programs, a landing URL for the locale) — the ONLY condition under
+ * which a partner button may render. This gating is a template invariant:
+ * an empty id, or a direct partner with no url for the locale, ⇒ hidden
+ * button — never an uncredited click, never a half-configured partner.
  */
 export function partnerProgramAvailable(
   partner: string,
@@ -153,51 +218,60 @@ export function partnerProgramAvailable(
   if (!program) {
     return false;
   }
-  return program.network === "rakuten"
-    ? Boolean(tags.rakutenSiteId)
-    : Boolean(tags.awinAffid && program.awinMid);
+  return programAvailable(program, locale, tags);
 }
+
+/** Default i18n key of a product card's primary CTA ("Acheter"/"Shop"). */
+export const DEFAULT_CTA_KEY = "affiliate.shopCta";
 
 export type AffiliateProduct = {
   id: string;
   icon: string;
-  /** Default destination — kept for consumers that only need one partner. */
+  /**
+   * Partner of the PRIMARY button — product.primary ?? "amazon". A
+   * config-partner primary is gated like any partner button (unconfigured
+   * program in the locale ⇒ button hidden); Amazon always renders.
+   */
   partner: AffiliatePartner;
   names: LocalizedCopy;
   blurbs: LocalizedCopy;
-  /** Search query used for the default partner. */
-  queries: LocalizedCopy;
+  /** Search query for the primary partner (search-mode partners only). */
+  queries?: LocalizedCopy;
+  /** Product-level direct landing URLs (direct-mode offers, see AffiliateOffer). */
+  urls?: LocalizedUrls;
   /**
-   * Secondary destination rendered as an extra button on the same card
-   * (e.g. Decathlon next to the Amazon link). Only rendered when the partner
-   * has a creditable program for the current locale.
+   * Secondary destinations rendered as extra buttons on the same card
+   * (e.g. Decathlon next to the Amazon link). Each renders only when its
+   * partner has a creditable program for the current locale.
    */
-  alt?: AffiliateOffer;
+  alts: AffiliateOffer[];
+  /** i18n key of the primary CTA — product.ctaKey ?? "affiliate.shopCta". */
+  ctaKey: string;
 };
 
-function configProduct(config: {
-  id: string;
-  icon: string;
-  names: LocalizedText;
-  blurbs: LocalizedText;
-  queries: LocalizedText;
-  alt?: { partner: string; queries: LocalizedText };
-}): AffiliateProduct {
+function configProduct(config: AffiliateProductConfig): AffiliateProduct {
+  const primary = config.primary;
   return {
     id: config.id,
     icon: config.icon,
-    partner: "amazon",
+    partner:
+      primary && isAffiliatePartner(primary)
+        ? primary
+        : "amazon",
     names: config.names,
     blurbs: config.blurbs,
-    queries: config.queries,
-    ...(config.alt
-      ? {
-        alt: {
-          partner: config.alt.partner as AffiliatePartner,
-          queries: config.alt.queries,
-        },
-      }
-      : {}),
+    ...(config.queries ? { queries: config.queries } : {}),
+    ...(config.urls ? { urls: config.urls } : {}),
+    alts: (config.alts ?? []).flatMap((alt) =>
+      isAffiliatePartner(alt.partner)
+        ? [{
+          partner: alt.partner,
+          ...(alt.queries ? { queries: alt.queries } : {}),
+          ...(alt.urls ? { urls: alt.urls } : {}),
+        }]
+        : [],
+    ),
+    ctaKey: config.ctaKey ?? DEFAULT_CTA_KEY,
   };
 }
 
@@ -293,8 +367,85 @@ function programSubid(subid?: AffiliateSubid): string | undefined {
 }
 
 /**
- * Tracked search URL on a config-partner storefront. Without the network's
- * publisher/merchant ids the plain storefront URL is returned (UI works
+ * The program's destination URL: a storefront search URL (search mode) or a
+ * fixed direct landing (direct mode). Untracked — network wrappers are
+ * applied by buildProgramLinkUrl.
+ */
+function programDestination(
+  program: PartnerProgram,
+  locale: ConfigLocale,
+  query: string,
+  productUrls?: LocalizedUrls,
+): string | undefined {
+  if (isDirectProgram(program)) {
+    // Direct mode: the fixed landing only — the query is never appended.
+    return directLanding(program, locale, productUrls);
+  }
+  if (!program.host) {
+    // Malformed search program (host is required there) — unbuildable.
+    return undefined;
+  }
+  const searchPath = program.searchPath ?? "/search";
+  // "Ntt" is the Decathlon storefront's query parameter (the example partner).
+  const queryParam = program.queryParam ?? "Ntt";
+  const dest = new URL(`https://${program.host}${searchPath}`);
+  dest.searchParams.set(queryParam, query);
+  return dest.toString();
+}
+
+/**
+ * Tracked URL on a config-partner program — PURE (takes the program object),
+ * so direct/search modes and both networks are testable against synthetic
+ * programs. Without the network's publisher/merchant ids the plain
+ * destination URL is returned (UI works pre-approval); the button itself is
+ * hidden in that case by partnerProgramAvailable(), so the untracked URL
+ * never ships. A DIRECT program with no landing for the locale returns ""
+ * (the button is hidden by the same gating).
+ */
+export function buildProgramLinkUrl(
+  program: PartnerProgram,
+  query: string,
+  locale: string,
+  tags: AffiliateTags,
+  subid?: AffiliateSubid,
+  productUrls?: LocalizedUrls,
+): string {
+  const loc = normalizeLocale(locale);
+  const dest = programDestination(program, loc, query, productUrls);
+  if (!dest) {
+    return "";
+  }
+
+  const token = programSubid(subid);
+  if (program.network === "rakuten") {
+    if (!tags.rakutenSiteId) {
+      return dest;
+    }
+    const wrap = new URL("https://click.linksynergy.com/deeplink");
+    wrap.searchParams.set("id", tags.rakutenSiteId);
+    wrap.searchParams.set("murl", dest);
+    if (token) {
+      wrap.searchParams.set("u1", token);
+    }
+    return wrap.toString();
+  }
+
+  if (!tags.awinAffid || !program.awinMid) {
+    return dest;
+  }
+  const wrap = new URL("https://www.awin1.com/cread.php");
+  wrap.searchParams.set("awinmid", program.awinMid);
+  wrap.searchParams.set("awinaffid", tags.awinAffid);
+  if (token) {
+    wrap.searchParams.set("clickref", token);
+  }
+  wrap.searchParams.set("ued", dest);
+  return wrap.toString();
+}
+
+/**
+ * Tracked URL for a config partner in a locale. Without the network's
+ * publisher/merchant ids the plain destination URL is returned (UI works
  * pre-approval); the button itself is hidden in that case by
  * partnerProgramAvailable(), so the untracked URL never ships.
  */
@@ -304,43 +455,13 @@ function buildProgramUrl(
   locale: ConfigLocale,
   tags: AffiliateTags,
   subid?: AffiliateSubid,
+  productUrls?: LocalizedUrls,
 ): string {
   const program = partnerProgram(partner, locale) ?? fallbackProgram(partner);
   if (!program) {
     return "";
   }
-  const searchPath = program.searchPath ?? "/search";
-  // "Ntt" is the Decathlon storefront's query parameter (the example partner).
-  const queryParam = program.queryParam ?? "Ntt";
-  const dest = new URL(`https://${program.host}${searchPath}`);
-  dest.searchParams.set(queryParam, query);
-  const href = dest.toString();
-
-  const token = programSubid(subid);
-  if (program.network === "rakuten") {
-    if (!tags.rakutenSiteId) {
-      return href;
-    }
-    const wrap = new URL("https://click.linksynergy.com/deeplink");
-    wrap.searchParams.set("id", tags.rakutenSiteId);
-    wrap.searchParams.set("murl", href);
-    if (token) {
-      wrap.searchParams.set("u1", token);
-    }
-    return wrap.toString();
-  }
-
-  if (!tags.awinAffid || !program.awinMid) {
-    return href;
-  }
-  const wrap = new URL("https://www.awin1.com/cread.php");
-  wrap.searchParams.set("awinmid", program.awinMid);
-  wrap.searchParams.set("awinaffid", tags.awinAffid);
-  if (token) {
-    wrap.searchParams.set("clickref", token);
-  }
-  wrap.searchParams.set("ued", href);
-  return wrap.toString();
+  return buildProgramLinkUrl(program, query, locale, tags, subid, productUrls);
 }
 
 export function buildPartnerUrl(
@@ -349,20 +470,48 @@ export function buildPartnerUrl(
   locale: string,
   tags: AffiliateTags,
   subid?: AffiliateSubid,
+  productUrls?: LocalizedUrls,
 ): string {
   const loc = normalizeLocale(locale);
   if (partner === "amazon") {
     return buildAmazonUrl(query, loc, tags);
   }
-  return buildProgramUrl(partner, query, loc, tags, subid);
+  return buildProgramUrl(partner, query, loc, tags, subid, productUrls);
 }
 
+/**
+ * The href for ONE offer (product primary or alt) in a locale — "" when the
+ * offer must NOT render. Gating invariant: a config partner without a
+ * creditable program in the locale (including a direct partner with no
+ * landing URL there) empties the href so the card hides the button instead
+ * of shipping an untracked link. Amazon always builds (tags optional).
+ */
+export function buildOfferUrl(
+  offer: AffiliateOffer,
+  locale: string,
+  tags: AffiliateTags,
+  subid?: AffiliateSubid,
+): string {
+  if (offer.partner !== "amazon" && !partnerProgramAvailable(offer.partner, locale, tags)) {
+    return "";
+  }
+  const query = offer.queries ? localizedCopy(offer.queries, locale) : "";
+  return buildPartnerUrl(offer.partner, query, locale, tags, subid, offer.urls);
+}
+
+/** One rendered secondary button: gated href + its partner. */
+export type ProductLinkAlt = {
+  href: string;
+  partner: AffiliatePartner;
+};
+
 export type ProductLink = {
+  /** "" when the primary partner is gated (button hidden) — Amazon never is. */
   href: string;
   partner: AffiliatePartner;
   product: AffiliateProduct;
-  /** Secondary partner button, present only when that partner is live here. */
-  alt?: { href: string; partner: AffiliatePartner };
+  /** Secondary partner buttons, in config order, "" href = hidden. */
+  alts: ProductLinkAlt[];
 };
 
 export function buildProductLink(
@@ -377,31 +526,22 @@ export function buildProductLink(
     return undefined;
   }
   const partner = partnerOverride ?? item.partner;
-  const query = localizedCopy(item.queries, locale);
-  const alt =
-    item.alt && partner !== item.alt.partner
-      ? {
-        partner: item.alt.partner,
-        // Gating invariant: an unavailable program empties the href so the
-        // card hides the secondary button instead of shipping an untracked
-        // link.
-        href:
-          item.alt.partner !== "amazon"
-            && !partnerProgramAvailable(item.alt.partner, locale, tags)
-            ? ""
-            : buildPartnerUrl(
-              item.alt.partner,
-              localizedCopy(item.alt.queries, locale),
-              locale,
-              tags,
-              subid,
-            ),
-      }
-      : undefined;
-  return {
-    product: item,
-    partner,
-    href: buildPartnerUrl(partner, query, locale, tags, subid),
-    ...(alt ? { alt } : {}),
-  };
+  const href = buildOfferUrl(
+    {
+      partner,
+      ...(item.queries ? { queries: item.queries } : {}),
+      ...(item.urls ? { urls: item.urls } : {}),
+    },
+    locale,
+    tags,
+    subid,
+  );
+  // An alt identical to the (possibly overridden) primary collapses into it.
+  const alts = item.alts
+    .filter((alt) => alt.partner !== partner)
+    .map((alt) => ({
+      partner: alt.partner,
+      href: buildOfferUrl(alt, locale, tags, subid),
+    }));
+  return { product: item, partner, href, alts };
 }

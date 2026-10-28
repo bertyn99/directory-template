@@ -9,6 +9,19 @@ interface CountriesResponse {
   countries?: CountryOption[]
 }
 
+/** `?facet=key:value` (string or repeated array) → key→value map. */
+function parseFacetQuery(raw: unknown): Record<string, string> {
+  const entries = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const map: Record<string, string> = {};
+  for (const entry of entries) {
+    if (typeof entry !== "string") continue;
+    const separator = entry.indexOf(":");
+    if (separator <= 0) continue;
+    map[entry.slice(0, separator)] = entry.slice(separator + 1);
+  }
+  return map;
+}
+
 export const useVenueFilters = (
   router: ReturnType<typeof useRouter>,
   route: ReturnType<typeof useRoute>,
@@ -36,6 +49,10 @@ export const useVenueFilters = (
           .map((slug) => ({ id: 0, name: slug, slug }))
       : []
   );
+  // Facet filters from URL (?facet=key:value&facet=…) → key→value map
+  // ("true" for booleans, enum value otherwise). Values are validated
+  // server-side against taxonomy.facets — unknown ones just yield no results.
+  const selectedFacets = ref<Record<string, string>>(parseFacetQuery(routeQuery.value?.facet));
   const { locale } = useI18n()
 
   onMounted(() => {
@@ -80,11 +97,13 @@ export const useVenueFilters = (
   });
 
   const applyFilters = async () => {
-    const query: Record<string, string | number> = {};
+    const query: Record<string, string | number | string[]> = {};
     if (searchName.value) query.search = searchName.value;
     if (selectedCountry.value?.code) query.country = selectedCountry.value.code;
     if (selectedCity.value?.slug) query.city = selectedCity.value.slug;
     if (selectedActivities.value.length) query.activities = selectedActivities.value.map(a => a.slug).join(",");
+    const facetEntries = Object.entries(selectedFacets.value);
+    if (facetEntries.length) query.facet = facetEntries.map(([key, value]) => `${key}:${value}`);
     if (currentPage.value > 1) query.page = currentPage.value;
 
     router.push({ path: localePath('/venues'), query });
@@ -95,6 +114,7 @@ export const useVenueFilters = (
     selectedActivities.value = [];
     selectedCity.value = null;
     selectedCountry.value = null;
+    selectedFacets.value = {};
     currentPage.value = 1;
     applyFilters();
   };
@@ -110,6 +130,7 @@ export const useVenueFilters = (
     selectedCountry,
     selectedCity,
     selectedActivities,
+    selectedFacets,
     routeQuery,
     applyFilters,
     resetFilters,

@@ -57,6 +57,12 @@ export interface ActivityDefinition {
    * (e.g. prod used French slug as activities.slug).
    */
   legacySlugs?: string[];
+  /**
+   * Iconify icon for category cards — carried from
+   * directoryConfig.taxonomy.categories[].icon (unset when the config
+   * category defines none; consumers then fall back to their own mapping).
+   */
+  icon?: string;
 }
 
 /**
@@ -76,6 +82,7 @@ export const ACTIVITY_CATALOG: Record<string, ActivityDefinition> =
           names: { en: category.name, ...category.labels },
           slugs: { en: category.slug, ...category.localeSlugs },
           legacySlugs: [...(category.legacySlugs ?? [])],
+          ...(category.icon && { icon: category.icon }),
         },
       ],
     ),

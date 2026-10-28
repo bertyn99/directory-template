@@ -45,34 +45,43 @@ const productIds = computed(() => {
 
 const cards = computed(() => {
   const override = parsePartner(props.partner);
+  const toCard = (link: NonNullable<ReturnType<typeof productLink>>) => ({
+    product: link.product,
+    href: link.href,
+    partner: link.partner,
+    // Gating invariant: an unavailable partner empties its href — the button
+    // (and a card with nothing left to click) stays hidden.
+    alts: link.alts.filter((alt) => alt.href).slice(0, 2),
+  });
   if (productIds.value.length > 0) {
     return productIds.value.flatMap((id) => {
       const link = productLink(id, override, subid.value);
       if (!link) {
         return [];
       }
-      return [{
-        product: link.product,
-        href: link.href,
-        partner: link.partner,
-        alt: link.alt?.href ? link.alt : undefined,
-      }];
+      const card = toCard(link);
+      if (!card.href && card.alts.length === 0) {
+        return [];
+      }
+      return [card];
     });
   }
   if (!props.sport) {
     return [];
   }
-  return kitForSport(props.sport, subid.value).map((card) => {
+  return kitForSport(props.sport, subid.value).flatMap((card) => {
     if (!override) {
-      return card;
+      return card.href || card.alts.length > 0 ? [card] : [];
     }
     const link = productLink(card.product.id, override, subid.value);
-    return {
-      product: card.product,
-      href: link?.href ?? card.href,
-      partner: link?.partner ?? card.partner,
-      alt: link?.alt?.href ? link.alt : card.alt,
-    };
+    if (!link) {
+      return [card];
+    }
+    const overridden = toCard(link);
+    if (!overridden.href && overridden.alts.length === 0) {
+      return card.href || card.alts.length > 0 ? [card] : [];
+    }
+    return [overridden];
   });
 });
 
@@ -107,10 +116,12 @@ const heading = computed(() => {
           :icon="card.product.icon"
           :href="card.href"
           :partner="card.partner"
-          :cta="t('affiliate.shopCta')"
-          :alt-href="card.alt?.href"
-          :alt-partner="card.alt?.partner"
-          :alt-cta="card.alt ? t('affiliate.alsoOn', { partner: partnerLabel(card.alt.partner) }) : undefined"
+          :cta="t(card.product.ctaKey)"
+          :alts="card.alts.map((alt) => ({
+            href: alt.href,
+            partner: alt.partner,
+            cta: t('affiliate.alsoOn', { partner: partnerLabel(alt.partner) }),
+          }))"
         />
       </div>
       <p v-if="bare" class="px-4 pb-4 sm:px-5 text-xs text-muted">

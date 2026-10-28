@@ -37,6 +37,18 @@ export const venues = pgTable(
     subscription: varchar("subscription", { length: 50 }),
     description: jsonb("description").$type<Record<string, { text: string; intro: string }>>(),
     website: text("website"),
+    /**
+     * Outbound booking/deep-link URL (e.g. the venue's Playtomic club page or
+     * its own booking system) — drives the venue-detail BookingCta. Nullable:
+     * no booking URL ⇒ no booking CTA (same unconfigured-⇒-hidden invariant).
+     */
+    bookingUrl: text("booking_url"),
+    /**
+     * Optional id matching a `directoryConfig.booking.partners[].id` — marks
+     * the booking link as that partner's (sponsored ⇒ rel + disclosure).
+     * Unset, the partner is still matched by host suffix of bookingUrl.
+     */
+    bookingPartner: text("booking_partner"),
     openingHours: jsonb("opening_hours"),
     tel: varchar("tel", { length: 20 }),
     addressId: integer("address_id").references(() => addresses.id, {
@@ -62,6 +74,15 @@ export const venues = pgTable(
     trustRank: integer("trust_rank").default(0),
     isManuallyEdited: jsonb("is_manually_edited").$type<Record<string, boolean>>().default({}),
     normalizedName: text("normalized_name"),
+    /**
+     * Per-venue structured attributes — open JSONB keyed by the facet keys
+     * declared in `directoryConfig.taxonomy.facets` (boolean/enum values).
+     * Deliberately schemaless: only config-declared keys are rendered
+     * publicly or filterable, anything else in here is ignored. Nullable: a
+     * venue without attributes renders no facet chips and matches no facet
+     * filter.
+     */
+    attributes: jsonb("attributes").$type<Record<string, unknown>>(),
   },
   (table) => [
     index("venue_name_idx").on(table.name),
@@ -181,6 +202,10 @@ export const insertVenueSchema = createInsertSchema(venues, {
   name: z.string().min(2),
   tel: z.string().min(8),
   website: z.string().url().optional(),
+  // Same URL convention as `website` (http(s) enforced by .url()); forms send
+  // undefined (absent key) when the field is left empty.
+  bookingUrl: z.string().url().optional(),
+  bookingPartner: z.string().optional(),
 });
 
 export const insertVenueWithAddressSchema = insertVenueSchema.extend({

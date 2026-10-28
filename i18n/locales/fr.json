@@ -339,6 +339,7 @@
     "moreActivities": "+{count} de plus",
     "visitWebsite": "Visiter le site",
     "openMap": "Ouvrir la carte",
+    "bookingCta": "Réserver",
     "access": "Accès",
     "stats": {
       "tracked": "Venues suivis",
@@ -383,7 +384,20 @@
     "mapHint": "Cliquez pour ouvrir dans votre application de cartes",
     "subscription": "Abonnement",
     "socialMedia": "Réseaux sociaux",
-    "seoSuffix": "horaires, téléphone & tarifs"
+    "formulasTitle": "Tarifs",
+    "equipmentsTitle": "Équipements",
+    "seoSuffix": "horaires, téléphone & tarifs",
+    "groupMember": "Membre du groupe {name}"
+  },
+  "facet": {
+    "group-classes": "Cours collectifs",
+    "open-sundays": "Ouvert le dimanche",
+    "ambiance": {
+      "label": "Ambiance",
+      "family": "Familiale",
+      "performance": "Performance",
+      "relaxed": "Détendue"
+    }
   },
   "blog": {
     "title": "Blog",
@@ -391,6 +405,7 @@
     "featured": "Nos Articles",
     "allArticles": "Tous les articles",
     "readMore": "Lire plus",
+    "noPost": "Aucun article pour le moment",
     "article": "Article",
     "featuredSubtitle": "Analyses d'experts et guides pratiques pour trouver votre venue"
   },
@@ -460,6 +475,28 @@
       "toastErrorDesc": "Vérifie tes informations."
     }
   },
+  "billing": {
+    "cycle": {
+      "monthly": "Mensuel",
+      "yearly": "Annuel"
+    },
+    "free": {
+      "title": "Visiteur",
+      "description": "Recherchez et découvrez des salles",
+      "price": "Gratuit",
+      "cta": "Commencer",
+      "features": {
+        "search": "Recherche de salles par localisation",
+        "profiles": "Consultation des fiches salles",
+        "activities": "Parcours des activités et horaires",
+        "reviews": "Lecture des avis"
+      }
+    },
+    "mostPopular": "Le plus populaire",
+    "buyNow": "Acheter maintenant",
+    "signInToBuy": "Se connecter pour acheter",
+    "manageSubscription": "Gérer l'abonnement"
+  },
   "country_names": {
     "FR": "France",
     "DE": "Allemagne",
@@ -487,12 +524,36 @@
     "NL": "des"
   },
   "eu_city_names": {
-    "Paris": "Paris",
-    "Berlin": "Berlin",
-    "London": "Londres",
+    "Amsterdam": "Amsterdam",
     "Barcelona": "Barcelone",
+    "Berlin": "Berlin",
+    "Birmingham": "Birmingham",
+    "Bordeaux": "Bordeaux",
+    "Brussels": "Bruxelles",
+    "Cologne": "Cologne",
+    "Glasgow": "Glasgow",
+    "Hamburg": "Hambourg",
+    "Lille": "Lille",
+    "Lisbon": "Lisbonne",
+    "London": "Londres",
+    "Lyon": "Lyon",
+    "Madrid": "Madrid",
+    "Marseille": "Marseille",
+    "Milan": "Milan",
+    "Montpellier": "Montpellier",
+    "Munich": "Munich",
+    "Nantes": "Nantes",
+    "Naples": "Naples",
+    "Nice": "Nice",
+    "Paris": "Paris",
+    "Porto": "Porto",
     "Rome": "Rome",
-    "Lisbon": "Lisbonne"
+    "Saint-Denis": "Saint-Denis",
+    "Strasbourg": "Strasbourg",
+    "Toulouse": "Toulouse",
+    "Valencia": "Valence",
+    "Vienna": "Vienne",
+    "Zurich": "Zurich"
   },
   "contact": {
     "title": "Contactez-nous",
@@ -573,6 +634,9 @@
       "name": "Nom",
       "tel": "Téléphone",
       "website": "Site Web",
+      "bookingUrl": "Lien de réservation",
+      "bookingPartner": "Partenaire de réservation",
+      "bookingPartnerNone": "Aucun partenaire",
       "openingHours": "Heures d'ouverture",
       "description": "Description",
       "socialMedia": "Réseaux sociaux",
@@ -785,6 +849,7 @@
     "nutritionTitle": "Nutrition & récupération",
     "nutritionEyebrow": "Nutrition",
     "shopCta": "Acheter",
+    "giftCta": "Offrir",
     "alsoOn": "Voir aussi sur {partner}",
     "disclosure": "Liens affiliés. Une commission peut être versée si vous achetez."
   },
@@ -883,5 +948,12 @@
         "body": "Le présent site est soumis au droit français. En cas de litige, contactez-nous en priorité via la page Contact."
       }
     }
+  },
+  "groups": {
+    "badge": "Groupe",
+    "breadcrumb": "Groupes",
+    "venueCount": "{count} établissements",
+    "allVenuesBy": "Tous les établissements de {name}",
+    "seoTitle": "{name} — {count} établissements"
   }
 }

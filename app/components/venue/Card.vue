@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { findActivityDefinition } from '~~/shared/activities'
 import { formatParisArrondissement } from '~~/shared/major-eu-cities'
 
 const props = defineProps({
@@ -142,12 +143,15 @@ const parsedActivities = computed(() => {
 const activitiesPreview = computed(() => parsedActivities.value.slice(0, 3))
 const remainingActivities = computed(() => Math.max(parsedActivities.value.length - activitiesPreview.value.length, 0))
 
-// Category → icon map. The template ships a deliberately GENERIC, keyword-based
-// map (fitness-flavoured samples) with a fallback for unknown categories.
-// Per-niche icon mapping is config territory: a niche app should replace this
-// with its own category→icon table (app config or composable) instead of
-// extending keyword matching here.
+// Category → icon resolution. CONFIG FIRST: when the category resolves in the
+// catalog (shared/activities.ts) and carries an icon — derived from
+// directoryConfig.taxonomy.categories[].icon — it wins; that is the per-niche
+// surface. The keyword map below is the deliberately GENERIC fallback
+// (fitness-flavoured samples) for categories without a config icon; it must
+// stay niche-neutral.
 const getCategoryIcon = (category: string) => {
+    const def = findActivityDefinition(category)
+    if (def?.icon) return def.icon
     const s = category.toLowerCase()
     if (s.includes('fitness') || s.includes('gym') || s.includes('muscu') || s.includes('train')) return 'i-lucide-dumbbell'
     if (s.includes('yoga') || s.includes('pilates') || s.includes('stretch')) return 'i-lucide-flower-2'

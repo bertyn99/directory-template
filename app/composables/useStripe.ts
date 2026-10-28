@@ -1,33 +1,49 @@
 // app/composables/useStripe.ts
 import { directoryConfig } from "~~/directory.config";
 
+/**
+ * Stripe checkout composable.
+ *
+ * Pricing is CONFIG-DERIVED: plan ids, titles, display prices and features
+ * come from directory.config.ts (billing) — the same ids the Stripe products
+ * must use, so the checkout() lookup keys `${id}_${billingCycle}` always
+ * match a real Stripe price. There is NO pricing API: the former
+ * `/api/pricing` fetch was removed (the route never existed, so every
+ * visitor silently used this table anyway).
+ *
+ * The free tier is static ENGINE copy (i18n `billing.*`): it never reaches
+ * checkout (guarded by tier.id !== "tier-free" in `plans`) and exists only
+ * to render the visitor card. The paid tiers' titles/descriptions/features
+ * are config-owned per-niche marketing copy (not i18n).
+ */
 export function useStripe() {
   const loading = ref(false);
   const { user } = useUserSession();
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const analytics = useAnalytics();
   const isYearly = ref("0");
   const { csrf } = useCsrf();
-  const items = ref([
+
+  // Billing-cycle toggle. Labels are i18n (`billing.cycle.*`); the checkout
+  // lookup key derives from the VALUE ("0"/"1") — never from the translated
+  // label — so Stripe lookup keys stay `*_monthly` / `*_yearly` everywhere.
+  const items = computed(() => [
     {
-      label: "Monthly",
+      label: t("billing.cycle.monthly"),
       value: "0",
     },
     {
-      label: "Yearly",
+      label: t("billing.cycle.yearly"),
       value: "1",
     },
   ]);
 
   const checkout = async (lookupKey: string) => {
-    // construct the key to use with stripe
-    const billingCycle =
-      items.value.find((elm) => elm.value === isYearly.value)?.label?.toLocaleLowerCase() ??
-      "monthly";
-    console.log(billingCycle);
+    // Construct the key to use with Stripe
+    const billingCycle: "monthly" | "yearly" = isYearly.value === "1" ? "yearly" : "monthly";
 
     // Track checkout started
-    analytics.subscription.checkoutStarted(lookupKey, billingCycle as "monthly" | "yearly");
+    analytics.subscription.checkoutStarted(lookupKey, billingCycle);
 
     loading.value = true;
     const res = await useRequestFetch()("/api/stripe/create-checkout-session", {
@@ -71,37 +87,41 @@ export function useStripe() {
     return res;
   };
 
-  // Fallback pricing table (used if the pricing API fails or returns nothing).
-  // Plan ids, titles, prices, descriptions and features come from
-  // directory.config.ts (billing) — the same ids the Stripe products must use,
-  // so the checkout() lookup keys `${id}_${billingCycle}` always match a real
-  // Stripe price. The free tier is static engine copy: it never reaches
-  // checkout (guarded by tier.id !== "tier-free" below) and exists only to
-  // render the visitor card.
-  const freeTier = {
-    title: "Visitor",
-    id: "tier-free",
-    description: "Search and discover venues",
-    price: {
-      monthly: "Free",
-      yearly: "Free",
-    },
-    features: [
-      "Search venues by location",
-      "View venue profiles",
-      "Browse activities and schedules",
-      "Read reviews",
-    ],
-    button: {
-      label: "Get Started",
-      to: "/dashboard",
-    },
+  // Locale-aware price formatting: ISO 4217 currency from the config,
+  // display locale from i18n — 9.99 renders "9,99 €" (fr) / "€9.99" (en).
+  const formatPrice = (amount: number) => {
+    try {
+      return new Intl.NumberFormat(locale.value, {
+        style: "currency",
+        currency: directoryConfig.billing.currency,
+      }).format(amount);
+    } catch {
+      // A malformed currency code in the config must not crash the pricing
+      // table — degrade to an amount + code suffix.
+      return `${amount} ${directoryConfig.billing.currency}`;
+    }
   };
 
-  const formatPrice = (amount: number) => `$${amount}`;
-
-  const fallbackTiers = [
-    freeTier,
+  const tiers = computed(() => [
+    {
+      title: t("billing.free.title"),
+      id: "tier-free",
+      description: t("billing.free.description"),
+      price: {
+        monthly: t("billing.free.price"),
+        yearly: t("billing.free.price"),
+      },
+      features: [
+        t("billing.free.features.search"),
+        t("billing.free.features.profiles"),
+        t("billing.free.features.activities"),
+        t("billing.free.features.reviews"),
+      ],
+      button: {
+        label: t("billing.free.cta"),
+        to: "/dashboard",
+      },
+    },
     ...directoryConfig.billing.plans.map((plan) => ({
       title: plan.title,
       id: plan.id,
@@ -110,117 +130,32 @@ export function useStripe() {
         monthly: formatPrice(plan.monthly),
         yearly: formatPrice(plan.yearly),
       },
-      billingCycle: "/month",
-      // highlight ⇒ the emphasized card: badge + primary CTA (same pair the
-      // former hardcoded "Most Popular"/scale entries produced).
-      ...(plan.highlight && { badge: "Most Popular", scale: true }),
+      // Cycle labels are i18n (`billing.cycle.*`) — consumers render the
+      // label for the active cycle; no hardcoded "/month" string ships here.
+      // highlight ⇒ the emphasized card: badge + primary CTA.
+      ...(plan.highlight && { badge: t("billing.mostPopular"), scale: true }),
       features: [...plan.features],
       // The label below is never rendered for paid tiers — the `plans`
-      // computed overrides it with the auth-state CTA ("Buy Now"/…), exactly
-      // like it does for API-provided tiers.
+      // computed overrides it with the auth-state CTA ("Buy Now"/…).
       button: {
         label: plan.title,
       },
     })),
-  ];
-
-  // Fetch pricing from API
-  const fetchPricing = async () => {
-    try {
-      const data = await useRequestFetch()<
-        Array<{
-          title: string;
-          description: string;
-          highlight?: boolean;
-          scale?: boolean;
-          features: string[];
-          prices: Array<{
-            interval: string;
-            amount: string;
-            // Never read by the tier transform; shape owned by the (untyped) pricing API
-            dbPrice: unknown;
-          }>;
-        }>
-      >(`/api/pricing?locale=${locale.value}`);
-
-      if (!data || data.length === 0) {
-        return fallbackTiers;
-      }
-
-      // Transform API response to tier structure
-      const transformedTiers = data.map((plan, _index) => {
-        const id = `tier-${plan.title.toLowerCase().replace(/\s+/g, "-")}`;
-
-        // Extract monthly and yearly prices
-        let monthlyPrice = "Free";
-        let yearlyPrice = "Free";
-
-        plan.prices.forEach((price) => {
-          if (price.interval === "month") {
-            monthlyPrice = price.amount;
-          }
-          if (price.interval === "year") {
-            yearlyPrice = price.amount;
-          }
-        });
-
-        return {
-          title: plan.title,
-          id,
-          description: plan.description,
-          price: {
-            monthly: monthlyPrice,
-            yearly: yearlyPrice,
-          },
-          ...(plan.highlight && { highlight: true }),
-          ...(plan.scale && { scale: true }),
-          billingCycle: "/month",
-          features: plan.features || [],
-          button: {
-            label: plan.title,
-          },
-        };
-      });
-
-      // Check if first plan is already free (has 0€ or $0 price for monthly)
-      const firstPlanPrice = transformedTiers.length > 0 ? transformedTiers[0].price.monthly : null;
-      // Match 'Free' or prices that contain '0' (like $0 or 0€)
-      const firstPlanIsFree =
-        firstPlanPrice === "Free" || (firstPlanPrice && /0/.test(firstPlanPrice));
-
-      // Only prepend fallback free tier if there's no free plan in the response
-      return firstPlanIsFree ? transformedTiers : [fallbackTiers[0], ...transformedTiers];
-    } catch (error) {
-      console.error("Failed to fetch pricing from API:", error);
-      return fallbackTiers;
-    }
-  };
-
-  // Fetch pricing data reactively
-  const { data: pricingData, refresh: refreshPricing } = useAsyncData(
-    "stripe-pricing",
-    fetchPricing,
-    {
-      default: () => fallbackTiers,
-      watch: [locale],
-    },
-  );
-
-  const tiers = computed(() => pricingData.value || fallbackTiers);
+  ]);
 
   const plans = computed(() => {
-    const getText = () => {
-      if (user.value?.hasPaidSubscription) return "Manage Subscription";
-      else if (user.value) return "Buy Now";
-      else return "Sign In to Buy";
-    };
+    const ctaLabel = user.value?.hasPaidSubscription
+      ? t("billing.manageSubscription")
+      : user.value
+        ? t("billing.buyNow")
+        : t("billing.signInToBuy");
 
     return tiers.value.map((tier) => {
       const updatedTier = {
         ...tier,
         button: {
           ...tier.button,
-          label: tier.id !== "tier-free" ? getText() : tier.button.label,
+          label: tier.id !== "tier-free" ? ctaLabel : tier.button.label,
           onClick:
             tier.id !== "tier-free"
               ? user.value?.hasPaidSubscription
@@ -241,6 +176,5 @@ export function useStripe() {
     plans,
     isYearly,
     items,
-    refreshPricing,
   };
 }

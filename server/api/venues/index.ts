@@ -11,6 +11,13 @@ export default cachedEventHandler(
     try {
       const query = getQuery(event);
 
+      // Repeated `facet=key:value` params — h3 returns a string when one is
+      // given, an array when repeated. Normalized here; key/value whitelist
+      // validation happens in searchVenuesInputSchema (ZodError → 400 below).
+      const rawFacets = query.facet === undefined
+        ? []
+        : (Array.isArray(query.facet) ? query.facet : [query.facet]);
+
       const input = searchVenuesInputSchema.parse({
         page: query.page ? parseInt(query.page as string) : undefined,
         pageSize: query.limit ? parseInt(query.limit as string) : undefined,
@@ -18,6 +25,7 @@ export default cachedEventHandler(
         citySlug: query.city as string | undefined,
         zip: query.zip as string | undefined,
         countryCode: query.country as string | undefined,
+        facets: rawFacets,
         locale: (query.locale as string | undefined) || undefined,
       });
 

@@ -4,6 +4,8 @@ import type { FormSubmitEvent } from '#ui/types'
 import type { insertVenueSchema} from '~~/server/db/schemas';
 import { insertVenueWithAddressSchema } from '~~/server/db/schemas';
 import { useCitySearch } from '~/composables/useCitySearch'
+import { directoryConfig } from '~~/directory.config'
+import { localizedCopy } from '~~/shared/affiliates'
 
 type Schema = z.output<typeof insertVenueSchema>
 type SchemaWithAddress = z.output<typeof insertVenueWithAddressSchema> & { id: number }
@@ -62,6 +64,16 @@ const equipmentOptions = ref([])
 const { loading: loadingCities, searchCities } = useCitySearch()
 const toast = useToast()
 const { csrf } = useCsrf()
+const { locale } = useI18n()
+
+/** Booking partner options (directoryConfig.booking.partners) — the select
+    is hidden entirely when the list is empty (plain CTAs only). */
+const bookingPartnerItems = computed(() => [
+    ...directoryConfig.booking.partners.map(partner => ({
+        label: localizedCopy(partner.label, locale.value),
+        value: partner.id,
+    })),
+])
 
 const btnSubmit = ref();
 const onSubmitOutsideForm = () => btnSubmit.value.click();
@@ -72,7 +84,9 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
             method: 'PUT',
             body: {
                 id: form.id,
-                ...event.data
+                ...event.data,
+                // "None" select option ⇒ absent key, never an empty string.
+                bookingPartner: event.data.bookingPartner || undefined,
             },
             headers: { 'csrf-token': csrf }
         })
@@ -119,6 +133,16 @@ const emit = defineEmits(['submitted'])
                         </UFormField>
                         <UFormField label="Website" name="website" class="col-span-2">
                             <UInput v-model="form.website" :ui="{ rounded: 'rounded-sm' }" />
+                        </UFormField>
+                        <UFormField label="Booking URL" name="bookingUrl" class="col-span-2">
+                            <UInput v-model="form.bookingUrl" :ui="{ rounded: 'rounded-sm' }" />
+                        </UFormField>
+                        <UFormField
+v-if="bookingPartnerItems.length" label="Booking Partner"
+                            name="bookingPartner" class="col-span-2">
+                            <USelect
+v-model="form.bookingPartner" :items="bookingPartnerItems"
+                                placeholder="— None —" :ui="{ rounded: 'rounded-sm' }" />
                         </UFormField>
 
                     </div>

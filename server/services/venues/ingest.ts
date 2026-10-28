@@ -1,6 +1,7 @@
 import { useDrizzle } from "#imports";
 import { venueSources, insertVenueSourceSchema } from "~~/server/db/schemas";
 import { eq } from "drizzle-orm";
+import { directoryConfig } from "~~/directory.config";
 import type { ScrapingSourceAdapter } from "../scraping/sources/types";
 import type { PlaceData, ActivityData, CityData } from "../scraping/parser";
 import {
@@ -39,8 +40,8 @@ function extractSourceVenueId(place: PlaceData): string | null {
   // Try to extract from raw data if it's an object
   if (place.raw && typeof place.raw === "object") {
     const raw = place.raw as Record<string, unknown>;
-    if (raw.id && typeof raw.id === "string") {
-      return raw.id;
+    if (raw.id != null && (typeof raw.id === "string" || typeof raw.id === "number")) {
+      return String(raw.id);
     }
     if (raw.slug && typeof raw.slug === "string") {
       return raw.slug;
@@ -129,6 +130,47 @@ export function deriveNameFromEmail(name: string): string {
 
 
 /**
+ * Name-keyword reject filter — the keyword list is CONFIG DATA
+ * (directoryConfig.scraping.rejectNameKeywords; SAMPLE list there is
+ * fitness-flavoured, per-niche replace). A place whose name contains one of
+ * the configured substrings is skipped at ingest.
+ */
+function isLikelyVenue(name: string): boolean {
+  const lower = name.toLowerCase();
+  return !directoryConfig.scraping.rejectNameKeywords.some(kw => lower.includes(kw));
+}
+
+/**
+ * Merge adapter-declared venue attributes (PlaceData.attributes, e.g. padel
+ * surface / spa capacité) into a venues.attributes object.
+ * Rule: an INSERT sets the payload directly; an update fills ONLY keys the
+ * venue does not have yet — owner-set values are never clobbered by a
+ * re-scrape. Non-object payloads and empty results yield undefined (column
+ * stays NULL). Keys are NOT restricted to taxonomy.facets here: the render
+ * + filter layers already ignore undeclared keys. Scraped `prices` are
+ * deliberately not consumed yet (they would need to map onto the
+ * owner-managed formulas table — left for a later wave).
+ */
+export function mergeVenueAttributes(
+  existing: Record<string, unknown> | null | undefined,
+  incoming: unknown,
+): Record<string, unknown> | undefined {
+  const payload = incoming !== null && typeof incoming === "object" && !Array.isArray(incoming)
+    ? (incoming as Record<string, unknown>)
+    : undefined;
+  if (!payload || Object.keys(payload).length === 0) return undefined;
+  if (!existing) return payload;
+  // Spread order IS the rule: existing keys win, incoming only fills gaps.
+  return { ...payload, ...existing };
+}
+
+/** Extract the adapter attributes payload from a stored venue_sources.raw PlaceData. */
+export function attributesFromSourceRaw(raw: unknown): unknown {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  return (raw as Record<string, unknown>).attributes;
+}
+
+/**
  * Ingest scraped places into venue_sources table
  */
 export async function ingestVenueSources(
@@ -143,17 +185,6 @@ export async function ingestVenueSources(
   // Use source code directly from the scraping source
   const sourceCode = input.source.meta.id;
   const locale = input.source.meta.locales[0] || "fr-FR";
-
-  // Filter out obviously non-venue businesses by name
-  const NON_VENUE_KEYWORDS = [
-    'nails', 'hair', 'beauty', 'salon', 'coiffure', 'ongle',
-    'tattoo', 'piercing',
-    'pharmacy', 'apotheken', 'restaurant', 'cafe', 'bar ',
-  ];
-  function isLikelyVenue(name: string): boolean {
-    const lower = name.toLowerCase();
-    return !NON_VENUE_KEYWORDS.some(kw => lower.includes(kw));
-  }
 
   // Process each place
   for (const place of input.places) {

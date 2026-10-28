@@ -73,8 +73,9 @@
         <div class="flex flex-col gap-8 lg:flex-row">
             <div ref="filtersAnchor" class="flex flex-col flex-none">
                 <VenueFilters
-                    v-model:search-name="searchName" v-model:selected-country="selectedCountry" v-model:selected-city="selectedCity"
-                    v-model:selected-activities="selectedActivities" @apply-filters="applyFilters"
+v-model:search-name="searchName" v-model:selected-country="selectedCountry" v-model:selected-city="selectedCity"
+                    v-model:selected-activities="selectedActivities" v-model:selected-facets="selectedFacets"
+                    @apply-filters="applyFilters"
                     @reset-filters="resetFilters" />
             </div>
 
@@ -85,6 +86,8 @@
 
 <script setup>
 import { useVenueFilters } from '~/composables/useVenueFilters'
+import { facetLabelKey, facetValueLabelKey } from '~~/shared/facets'
+import { directoryConfig } from '~~/directory.config'
 
 const RESULTS_PER_PAGE = 12
 
@@ -104,6 +107,7 @@ const {
     selectedCountry,
     selectedCity,
     selectedActivities,
+    selectedFacets,
     currentPage,
     routeQuery,
     applyFilters,
@@ -111,12 +115,16 @@ const {
     updatePage
 } = useVenueFilters(router, route)
 
+// Facet filters as repeated `facet=key:value` API params.
+const facetParams = () => Object.entries(selectedFacets.value ?? {}).map(([key, value]) => `${key}:${value}`)
+
 const keyCacheVenue = () => {
     const filters = {
         search: searchName.value,
         country: selectedCountry.value?.code,
         city: selectedCity.value?.slug,
         activities: selectedActivities.value?.map(a => a.id).join(','),
+        facets: facetParams().join(','),
         page: currentPage.value,
         locale: locale.value,
     };
@@ -134,6 +142,7 @@ const { data, refresh, pending } = await useAsyncData(`${keyCacheVenue()}`, () =
             country: routeQuery.value?.country ?? null,
             city: routeQuery.value?.city ?? null,
             activities: routeQuery.value?.activities,
+            facet: facetParams(),
             locale: locale.value,
             limit: RESULTS_PER_PAGE,
             page: currentPage.value ?? 1,
@@ -171,6 +180,15 @@ const activeFilters = computed(() => {
     }
     if (selectedActivities.value?.length) {
       filters.push(...selectedActivities.value.map((activity) => normalizeLabel(activity)).filter(Boolean))
+    }
+    // Facet labels: boolean → facet.<key>, enum → facet.<key>.<value> (the
+    // facet def comes from the config; unknown keys in the URL are dropped
+    // silently by the server, so only declared ones can render here).
+    for (const [key, value] of Object.entries(selectedFacets.value ?? {})) {
+      const facet = directoryConfig.taxonomy.facets.find(f => f.key === key)
+      if (!facet) continue
+      if (facet.kind === 'boolean') filters.push(t(facetLabelKey(facet)))
+      else if (facet.values?.includes(value)) filters.push(t(facetValueLabelKey(facet, value)))
     }
     return filters
 })

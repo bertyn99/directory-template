@@ -37,15 +37,43 @@ export type PartnerNetwork = "rakuten" | "awin";
 /** Per-locale merchant program of an affiliate partner. */
 export interface PartnerProgram {
   network: PartnerNetwork;
-  /** Merchant storefront host for this country (e.g. "www.decathlon.fr"). */
-  host: string;
+  /**
+   * Merchant storefront host for this country (e.g. "www.decathlon.fr").
+   * SEARCH-mode programs only — DIRECT programs link to `urls` and don't
+   * need a host.
+   */
+  host?: string;
   /** Rakuten merchant id — informational (the deeplink needs the publisher site id). */
   rakutenMid?: string;
   /** Awin merchant id — REQUIRED to build a tracked Awin link. Empty ⇒ button hidden. */
   awinMid?: string;
-  /** Search path on the storefront. Default: "/search". */
+  /**
+   * How links are built for this program. Default "search": storefront host
+   * + searchPath + per-product query. "direct": ONE fixed landing URL per
+   * locale — no search at all (gift-experience vouchers, category landings…).
+   *
+   * Example (direct partner, Awin):
+   * ```
+   * {
+   *   network: "awin",
+   *   awinMid: "12345",            // empty ⇒ hidden until configured
+   *   linkMode: "direct",
+   *   urls: {
+   *     fr: "https://www.smartbox.com/fr/fr/c/bien-etre",
+   *     en: "https://www.smartbox.com/uk/c/wellness",
+   *   },
+   * }
+   * ```
+   * RULE: a direct partner with NO url for a locale is treated as
+   * unavailable in that locale (button hidden — same invariant as empty
+   * ids: never ship a half-configured partner).
+   */
+  linkMode?: "search" | "direct";
+  /** DIRECT programs: fixed landing URL per locale (see linkMode). */
+  urls?: Partial<Record<ConfigLocale, string>>;
+  /** SEARCH programs: search path on the storefront. Default: "/search". */
   searchPath?: string;
-  /** Query-string parameter carrying the search query. Default: "Ntt" (Decathlon). */
+  /** SEARCH programs: query-string parameter. Default: "Ntt" (Decathlon). */
   queryParam?: string;
 }
 
@@ -72,14 +100,68 @@ export interface AffiliateProductConfig {
   names: LocalizedText;
   /** One-line pitch per locale. */
   blurbs: LocalizedText;
-  /** Search query for the DEFAULT partner (Amazon), per locale. */
-  queries: LocalizedText;
   /**
-   * Secondary partner offer rendered as an extra button on the SAME card.
-   * Hidden entirely when that partner's program is not creditable in the
-   * current locale (template invariant — see shared/affiliates.ts).
+   * Partner of the PRIMARY button: "amazon" (default) or a key of
+   * `affiliates.partners`. Amazon is NOT forced — a gift card can lead with
+   * a voucher partner while a gear card keeps Amazon/Decathlon. A
+   * config-partner primary obeys the same gating as any partner button
+   * (unconfigured/absent program in the locale ⇒ button hidden).
    */
-  alt?: { partner: string; queries: LocalizedText };
+  primary?: string;
+  /**
+   * Search query per locale. REQUIRED when the resolved partner (primary or
+   * alt) is search-mode; unused for direct partners.
+   */
+  queries?: LocalizedText;
+  /**
+   * Product-level direct landing URL per locale — for a product that IS a
+   * single landing offer (e.g. one specific gift box) rather than a
+   * partner-search. Overrides the partner program's `urls` per locale for
+   * direct partners; ignored for search partners.
+   */
+  urls?: Partial<Record<ConfigLocale, string>>;
+  /**
+   * Secondary partner offers rendered as extra buttons on the SAME card
+   * (0..n — e.g. Decathlon next to Amazon, or Amazon next to a voucher
+   * partner). Each is hidden when its partner's program is not creditable
+   * in the current locale (template invariant — see shared/affiliates.ts).
+   */
+  alts?: ReadonlyArray<{
+    partner: string;
+    queries?: LocalizedText;
+    urls?: Partial<Record<ConfigLocale, string>>;
+  }>;
+  /**
+   * i18n key of the primary button label. Default "affiliate.shopCta"
+   * ("Acheter"/"Shop") — override per product so gear ("Acheter") and gift
+   * ("Offrir") cards can coexist in one kit.
+   */
+  ctaKey?: string;
+}
+
+/**
+ * One outbound booking partner of the venue-detail booking CTA — the niche's
+ * booking platforms (e.g. Playtomic for padel) whose venue pages the
+ * directory deep-links to. Matched against a venue's `booking_url` (by
+ * `booking_partner` id first, then by host suffix) to pick the CTA label and
+ * rel; `sponsored` marks a commercial partnership (rel + disclosure).
+ */
+export interface BookingPartnerConfig {
+  /** Stable id — the value stored in the venues `booking_partner` column. */
+  id: string;
+  /** CTA label per locale (fr required — same LocalizedText fallback as everywhere). */
+  label: LocalizedText;
+  /**
+   * Host suffixes identifying the partner's booking pages — "playtomic.com"
+   * matches "venues.playtomic.com" and "playtomic.com" (www stripped).
+   */
+  hosts: readonly string[];
+  /**
+   * True ⇒ the CTA is a monetized/sponsored placement: rel="sponsored
+   * noopener noreferrer" + the `affiliate.disclosure` string rendered next
+   * to the button. False ⇒ plain outbound link (rel="noopener").
+   */
+  sponsored: boolean;
 }
 
 /** One paid plan — Stripe product id + fallback pricing-table copy. */
@@ -100,7 +182,11 @@ export interface BillingPlan {
   yearly: number;
   /** Mark as the highlighted "most popular" card (badge + emphasized CTA). */
   highlight?: boolean;
-  /** Feature bullets listed on the card. */
+  /**
+   * Feature bullets listed on the pricing card. PER-NICHE MARKETING COPY —
+   * config-owned like title/description (each instantiation writes its own),
+   * NOT i18n: these strings ship as-is in every locale.
+   */
   features: readonly string[];
 }
 
@@ -120,6 +206,48 @@ export interface TaxonomyCategory {
   localeSlugs?: Partial<Record<ConfigLocale, string>>;
   /** Historical / env-specific primary slugs that still identify this category. */
   legacySlugs?: readonly string[];
+  /**
+   * Iconify icon shown on category cards (venue cards, hubs), carried through
+   * the catalog derivation (shared/activities.ts). Format "i-<collection>-<name>";
+   * the icon must be safelisted — nuxt.config.ts derives the safelist from
+   * this field. Unset ⇒ cards fall back to the generic keyword icon map.
+   */
+  icon?: string;
+  /**
+   * Open per-niche metadata slot (future waves consume it) — free-form, no
+   * engine semantics in the template. Keep it JSON-serializable.
+   */
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * One venue attribute facet — a config-declared structured attribute of the
+ * venues.attributes JSONB column. `key` is the JSONB key AND the i18n label
+ * key fragment (`facet.<key>`, plus `facet.<key>.<value>` for enum values).
+ */
+export interface FacetConfig {
+  /** JSONB key of venues.attributes (also the i18n `facet.<key>` fragment). */
+  key: string;
+  /**
+   * boolean ⇒ the value is `true`/absent (a `false` is meaningless: the chip
+   * only renders when true, the filter only matches true). enum ⇒ the value
+   * is one of `values`.
+   */
+  kind: "boolean" | "enum";
+  /**
+   * Enum vocabulary — REQUIRED for kind: "enum" (≥1 value, enforced by the
+   * instantiation contract test) and forbidden noise on booleans. Values are
+   * whitelisted for filtering AND rendering: unknown keys/values in venue
+   * data are never rendered.
+   */
+  values?: readonly string[];
+  /**
+   * false ⇒ display-only chip on the venue page (no filter control, not
+   * accepted as an API filter). Default true.
+   */
+  filterable?: boolean;
+  // Number facets are deliberately OUT of this engine: per-venue prices live
+  // in the `formulas` table (name + price + period), not in attributes.
 }
 
 export interface DirectoryConfig {
@@ -175,6 +303,22 @@ export interface DirectoryConfig {
      * identity: ids differ between local and prod.
      */
     seedIds: Readonly<Record<string, number>>;
+    /**
+     * Venue attribute facets — per-niche structured attributes carried by the
+     * venues.attributes JSONB column (SINGLE SOURCE for the public chips, the
+     * filter controls and the API filter whitelist):
+     * - key = venues.attributes JSONB key; i18n labels are `facet.<key>`
+     *   (chip label) and `facet.<key>.<value>` (enum value labels) — every
+     *   active locale must define them (contract test).
+     * - kind "boolean" renders/filters `true` only; kind "enum" REQUIRES
+     *   `values` (whitelisted) — number facets are OUT (prices live in the
+     *   formulas table).
+     * - filterable: false ⇒ display-only chip, no filter control.
+     * - Unknown keys in venue data are never rendered (config-declared keys only).
+     * SAMPLE below — per-niche replace (padel: indoor/outdoor, court count…;
+     * spa: privatif, hébergement, capacité…).
+     */
+    facets: readonly FacetConfig[];
   };
 
   /**
@@ -212,6 +356,23 @@ export interface DirectoryConfig {
   };
 
   /**
+   * Outbound booking CTA on venue detail. Venues carry `booking_url` (their
+   * Playtomic / booking-platform page or their own booking system) and an
+   * optional `booking_partner`; partners are matched by id first, then by
+   * host suffix of the URL, to decide label + rel:
+   * - matched partner with `sponsored: true` ⇒ rel="sponsored noopener
+   *   noreferrer" + the `affiliate.disclosure` i18n string adjacent to the
+   *   CTA (commercial partnership — same legal regime as affiliate links);
+   * - unmatched URL ⇒ plain outbound link (rel="noopener");
+   * - empty `partners` (the shipped default) ⇒ every booking link is plain.
+   * No booking_url ⇒ the CTA renders nothing (unconfigured ⇒ hidden).
+   */
+  booking: {
+    /** Booking partner registry — empty by default (plain CTAs only). */
+    partners: readonly BookingPartnerConfig[];
+  };
+
+  /**
    * Billing — Stripe plan vocabulary. The plan ids here are the SINGLE
    * SOURCE for the session `plan` union (shared/types/auth.d.ts), the
    * fallback pricing table (app/composables/useStripe.ts) and the seeded
@@ -219,6 +380,12 @@ export interface DirectoryConfig {
    * ids and price lookup keys `${id}_monthly` / `${id}_yearly`.
    */
   billing: {
+    /**
+     * ISO 4217 currency code of the Stripe account ("EUR", "USD", …) — used
+     * by the pricing-table formatter (app/composables/useStripe.ts,
+     * Intl.NumberFormat) and must match the currency of the Stripe prices.
+     */
+    currency: string;
     /** Plan id of the free tier — never listed in `plans`, never checked out. */
     freePlanId: string;
     /** Paid plans, cheapest first (display order of the pricing table cards). */
@@ -233,6 +400,7 @@ export interface DirectoryConfig {
    * - NUXT_PUBLIC_ADSENSE_SLOT_HOME             — homepage leaderboard slot
    * - NUXT_PUBLIC_ADSENSE_SLOT_CATEGORIES_HUB   — categories-hub card slot
    * - NUXT_PUBLIC_ADSENSE_SLOT_CATEGORY_DETAIL  — category-hub in-article slot
+   * - NUXT_PUBLIC_ADSENSE_SLOT_VENUE_DETAIL     — venue-detail bottom slot
    * (Slot env names renamed at template extraction: *_STYLES_HUB →
    * *_CATEGORIES_HUB, *_STYLE_DETAIL → *_CATEGORY_DETAIL.)
    */
@@ -243,6 +411,7 @@ export interface DirectoryConfig {
         home: string;
         categoriesHub: string;
         categoryDetail: string;
+        venueDetail: string;
       };
     };
   };
@@ -253,9 +422,15 @@ export interface DirectoryConfig {
    * under /categories/<category>/<spoke> (shared/silo.ts derives its spoke
    * types, entry types and reserved slugs from this list). Labels live in
    * the i18n keys `guide.types.<slug>` — never in this config.
+   * pillarPaths: per-locale path of the pillar article linked from the home
+   * hero CTA and the footer guides column (SAMPLE paths below point at the
+   * template's sample blog posts — replace with the niche's own pillar).
+   * A locale WITHOUT an entry ⇒ the links are hidden there (no cross-locale
+   * fallback: a fr page never links to the en article).
    */
   content: {
     siloSpokes: readonly string[];
+    pillarPaths: Partial<Record<ConfigLocale, string>>;
   };
 
   /**
@@ -268,6 +443,14 @@ export interface DirectoryConfig {
    */
   scraping: {
     sources: readonly string[];
+    /**
+     * Name-keyword reject list applied at ingest: a scraped place whose name
+     * CONTAINS one of these (lowercased) substrings is skipped entirely.
+     * SAMPLE — per-niche replace; spa/padel sites likely want [] (the shipped
+     * fitness-flavoured list rejects 'beauty'/'salon', which would silently
+     * delete legitimate spa venues). Empty array ⇒ ingest keeps everything.
+     */
+    rejectNameKeywords: readonly string[];
     /**
      * Major cities featured on cards with banner images
      * (/img/cities/<slug>.jpg). Alias handling (e.g. Lisboa → Lisbon) lives
@@ -307,6 +490,7 @@ export const directoryConfig = {
           it: "fitness",
           pt: "fitness",
         },
+        icon: "i-lucide-dumbbell",
       },
       {
         slug: "yoga",
@@ -326,6 +510,7 @@ export const directoryConfig = {
           it: "yoga",
           pt: "yoga",
         },
+        icon: "i-lucide-flower-2",
       },
       {
         slug: "spa",
@@ -345,6 +530,7 @@ export const directoryConfig = {
           it: "spa",
           pt: "spa",
         },
+        icon: "i-lucide-droplets",
       },
     ],
     aliases: {
@@ -370,11 +556,36 @@ export const directoryConfig = {
     ],
     mostSearched: ["fitness", "yoga", "spa"] as const,
     seedIds: { fitness: 1, yoga: 2, spa: 3 } as const,
+
+    // SAMPLE facets — per-niche replace (see the taxonomy.facets JSDoc).
+    // i18n labels: i18n key family `facet.*` (facet.<key> + facet.<key>.<value>).
+    facets: [
+      { key: "group-classes", kind: "boolean", filterable: true },
+      { key: "open-sundays", kind: "boolean", filterable: true },
+      { key: "ambiance", kind: "enum", values: ["family", "performance", "relaxed"], filterable: true },
+    ] as readonly FacetConfig[],
   },
 
   affiliates: {
+    /**
+     * Partner registry (Amazon is built-in but NOT forced as primary — each
+     * product picks its `primary`, defaulting to amazon). Each entry: label
+     * + per-locale program map. Programs are "search" mode (storefront
+     * search, default) or "direct" mode (one fixed landing URL per locale —
+     * gift vouchers, category landings; see PartnerProgram.linkMode).
+     * ⚠ Empty ids keep everything hidden until configured:
+     *   - Rakuten program ⇒ set NUXT_PUBLIC_AFFILIATE_RAKUTEN_SITE_ID (env)
+     *   - Awin program    ⇒ set NUXT_PUBLIC_AFFILIATE_AWIN_AFFID (env)
+     *                       AND the program's awinMid here.
+     *   - Direct program  ⇒ ALSO a `urls` entry for the locale (missing url
+     *                       in a locale ⇒ hidden there, same invariant).
+     * Decathlon ships as the EXAMPLE search partner (one program per
+     * country, one network per country — the pattern proven in production);
+     * example-gifts is the EXAMPLE direct partner (gift-voucher shape).
+     * Replace or extend with the niche's merchants.
+     */
     partners: {
-      // EXAMPLE partner — per-country programs, one network each.
+      // EXAMPLE search partner — per-country programs, one network each.
       decathlon: {
         label: "Decathlon",
         programs: {
@@ -389,8 +600,30 @@ export const directoryConfig = {
           pt: { network: "awin", host: "www.decathlon.pt", awinMid: "" },
         },
       },
+      // EXAMPLE direct partner — gift-experience vouchers (Smartbox/Wonderbox
+      // shape): one fixed landing per locale, no storefront search. awinMid
+      // empty ⇒ stays HIDDEN until the program is configured (invariant).
+      "example-gifts": {
+        label: "Example Gifts",
+        programs: {
+          fr: {
+            network: "awin",
+            awinMid: "",
+            linkMode: "direct",
+            urls: {
+              fr: "https://www.example-gifts.fr/bien-etre",
+              en: "https://www.example-gifts.com/wellness",
+            },
+          },
+          en: null,
+        },
+      },
     },
-    // SAMPLE products — replace with the niche's gear when instantiating.
+    // SAMPLE products — replace with the niche's gear/gifts when
+    // instantiating. Search-shaped products need `queries`; direct products
+    // (primary on a linkMode:"direct" partner) need none. `ctaKey` swaps the
+    // button label per product so gear ("Acheter") and gift ("Offrir") cards
+    // coexist in one kit.
     products: [
       {
         id: "yoga-mat",
@@ -401,10 +634,12 @@ export const directoryConfig = {
           en: "Non-slip, 4–6 mm: the base of every session.",
         },
         queries: { fr: "tapis de yoga antidérapant", en: "non slip yoga mat" },
-        alt: {
-          partner: "decathlon",
-          queries: { fr: "tapis de yoga", en: "yoga mat" },
-        },
+        alts: [
+          {
+            partner: "decathlon",
+            queries: { fr: "tapis de yoga", en: "yoga mat" },
+          },
+        ],
       },
       {
         id: "spa-robe",
@@ -415,33 +650,58 @@ export const directoryConfig = {
           en: "Absorbent terry cotton, to extend the hammam experience at home.",
         },
         queries: { fr: "peignoir coton éponge", en: "terry cloth bathrobe" },
-        alt: {
-          partner: "decathlon",
-          queries: { fr: "peignoir de bain", en: "bathrobe" },
-        },
+        alts: [
+          {
+            partner: "decathlon",
+            queries: { fr: "peignoir de bain", en: "bathrobe" },
+          },
+        ],
       },
       {
         id: "fitness-bands",
         icon: "i-lucide-dumbbell",
+        // primary override demo — this card LEADS with Decathlon instead of
+        // Amazon (Decathlon hidden in en: no program there).
+        primary: "decathlon",
         names: { fr: "Bandes élastiques", en: "Fitness bands" },
         blurbs: {
           fr: "Résistances variables pour s'échauffer ou se renforcer partout.",
           en: "Variable resistance for warm-ups or strength work anywhere.",
         },
         queries: { fr: "bandes élastiques fitness", en: "resistance bands set" },
-        alt: {
-          partner: "decathlon",
-          queries: { fr: "bandes élastiques", en: "resistance band" },
+      },
+      {
+        id: "wellness-gift-voucher",
+        icon: "i-lucide-gift",
+        // Direct-mode demo — leads with a gift-voucher partner, "Offrir" CTA.
+        // Hidden everywhere until example-gifts' awinMid is configured.
+        primary: "example-gifts",
+        ctaKey: "affiliate.giftCta",
+        names: { fr: "Bon cadeau bien-être", en: "Wellness gift voucher" },
+        blurbs: {
+          fr: "Offrez une parenthèse : spa, massage ou sauna en coffret cadeau.",
+          en: "Give a wellness escape: spa, massage or sauna in a gift box.",
         },
       },
     ],
-    kit: ["yoga-mat", "spa-robe", "fitness-bands"],
+    kit: ["yoga-mat", "spa-robe", "fitness-bands", "wellness-gift-voucher"],
+  },
+
+  // Booking partners — EMPTY by default: venue booking links (venues
+  // booking_url/booking_partner columns) render as plain outbound CTAs until
+  // the niche's booking platforms are configured here. Fill with entries
+  // shaped like:
+  //   { id: "playtomic", label: { fr: "Réserver sur Playtomic" },
+  //     hosts: ["playtomic.com"], sponsored: true }
+  booking: {
+    partners: [] as readonly BookingPartnerConfig[],
   },
 
   // SAMPLE pricing — neutral placeholder copy. Replace titles/descriptions/
   // features with the niche's offer; keep plan ids matching the Stripe
   // products created per instantiation (lowercase slug, used in lookup keys).
   billing: {
+    currency: "EUR",
     freePlanId: "free",
     plans: [
       {
@@ -484,6 +744,7 @@ export const directoryConfig = {
         home: "",
         categoriesHub: "",
         categoryDetail: "",
+        venueDetail: "",
       },
     },
   },
@@ -497,12 +758,27 @@ export const directoryConfig = {
       "equipement",
       "techniques",
     ] as const,
+    // SAMPLE pillar paths — the template's sample blog articles. Replace with
+    // the niche's own pillar post per locale; drop a locale's entry to hide
+    // the hero CTA + footer link in that locale.
+    pillarPaths: {
+      fr: "/blog/annuaire-niche-vs-marketplace",
+      en: "/blog/niche-directory-vs-marketplace",
+    },
   },
 
   scraping: {
     // Active adapters — validated against sources/registry.ts at boot; the
     // instantiation contract test asserts coherence in the unit lane.
     sources: ["masalledesport", "fitnesspark"],
+    // JSON no-browser archetype (OSM Overpass) ships unselected — enable with:
+    // sources: [..., "osm-overpass"],
+    // SAMPLE reject list (fitness-flavoured) — see the field JSDoc above.
+    rejectNameKeywords: [
+      "nails", "hair", "beauty", "salon", "coiffure", "ongle",
+      "tattoo", "piercing",
+      "pharmacy", "apotheken", "restaurant", "cafe", "bar ",
+    ],
     seedCities: ["Paris", "Berlin", "London", "Barcelona", "Rome", "Lisbon"],
   },
 } satisfies DirectoryConfig;

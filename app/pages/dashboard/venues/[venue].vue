@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { directoryConfig } from '~~/directory.config'
+import { localizedCopy } from '~~/shared/affiliates'
+
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
@@ -6,7 +9,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const { csrf } = useCsrf()
 const confirm = useConfirmDialog()
@@ -32,6 +35,8 @@ const infoForm = reactive({
   subscription: '',
   description: {} as Record<string, DescriptionLocale>,
   website: '',
+  bookingUrl: '',
+  bookingPartner: '',
   openingHours: '',
   tel: '',
   access: {} as Record<string, string[]>,
@@ -51,6 +56,8 @@ function initInfoForm() {
   infoForm.searchPicture = (c.searchPicture as string) ?? ''
   infoForm.subscription = (c.subscription as string) ?? ''
   infoForm.website = (c.website as string) ?? ''
+  infoForm.bookingUrl = (c.bookingUrl as string) ?? ''
+  infoForm.bookingPartner = (c.bookingPartner as string) ?? ''
   infoForm.openingHours = (c.openingHours as string) ?? ''
   infoForm.tel = (c.tel as string) ?? ''
   infoForm.socialMedia = (c.socialMedia as { facebook: string; twitter: string; instagram: string }) ?? { facebook: '', twitter: '', instagram: '' }
@@ -66,13 +73,31 @@ watch(() => venue.value, initInfoForm, { immediate: true })
 
 const descLocaleItems = locales.map(l => ({ label: l.toUpperCase(), key: l }))
 
+/** Booking partner options (directoryConfig.booking.partners) — the select
+    is hidden entirely when the list is empty (plain CTAs only); the leading
+    "None" option (value '') lets owners unset a partner, so "empty" here
+    means items.length === 1. */
+const bookingPartnerItems = computed(() => [
+  { label: t('dashboard.venue.bookingPartnerNone'), value: '' },
+  ...directoryConfig.booking.partners.map(partner => ({
+    label: localizedCopy(partner.label, locale.value),
+    value: partner.id,
+  })),
+])
+
 const infoSaving = ref(false)
 async function saveInfo() {
   infoSaving.value = true
   try {
     await $fetch('/api/users/venues', {
       method: 'PUT',
-      body: { ...infoForm },
+      body: {
+        ...infoForm,
+        // insertVenueSchema convention (see venues.ts): an empty form field is
+        // sent as an ABSENT key — "" is not a valid URL.
+        bookingUrl: infoForm.bookingUrl || undefined,
+        bookingPartner: infoForm.bookingPartner || undefined,
+      },
       headers: { 'csrf-token': csrf },
     })
     toast.add({ title: t('dashboard.venue.save'), icon: 'i-heroicons-check-circle', color: 'success' })
@@ -399,6 +424,16 @@ const tabItems = computed(() => [
             </UFormField>
             <UFormField :label="$t('dashboard.venue.website')" name="website" class="md:col-span-2">
               <UInput v-model="infoForm.website" :ui="{ rounded: 'rounded-sm' }" />
+            </UFormField>
+            <UFormField :label="$t('dashboard.venue.bookingUrl')" name="bookingUrl">
+              <UInput v-model="infoForm.bookingUrl" :ui="{ rounded: 'rounded-sm' }" />
+            </UFormField>
+            <UFormField
+v-if="bookingPartnerItems.length > 1" :label="$t('dashboard.venue.bookingPartner')"
+              name="bookingPartner">
+              <USelect
+v-model="infoForm.bookingPartner" :items="bookingPartnerItems"
+                :ui="{ rounded: 'rounded-sm' }" />
             </UFormField>
           </div>
 

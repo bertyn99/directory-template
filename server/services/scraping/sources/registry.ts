@@ -1,6 +1,7 @@
 import type { ScrapingSourceAdapter, CountryCode, LocaleCode } from "./types";
 import { masalledesportSource } from "./masalledesport";
 import { fitnessparkSource } from "./fitnesspark";
+import { osmOverpassSource } from "./osm-overpass";
 import { directoryConfig } from "~~/directory.config";
 import { SCRAPING_SOURCE_IDS } from "./ids";
 
@@ -19,6 +20,7 @@ import { SCRAPING_SOURCE_IDS } from "./ids";
 const allAdapters: ScrapingSourceAdapter[] = [
   masalledesportSource,
   fitnessparkSource,
+  osmOverpassSource,
 ];
 
 // Drift guard: ids.ts must mirror exactly the adapters registered here.

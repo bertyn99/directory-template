@@ -10,7 +10,7 @@ interface OTPEmailTemplate {
 
 function getOTPEmailTemplate(otp: string, expiryMinutes: number): OTPEmailTemplate {
   return {
-    subject: "Reset your password - Directory Template",
+    subject: `Reset your password - ${directoryConfig.name}`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Password Reset</h1>

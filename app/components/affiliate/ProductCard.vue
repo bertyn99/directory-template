@@ -1,22 +1,29 @@
 <script setup lang="ts">
-import { AFFILIATE_REL, partnerLabel, type AffiliatePartner } from "~~/shared/affiliates";
+import {
+  AFFILIATE_REL,
+  partnerLabel,
+  type AffiliatePartner,
+} from "~~/shared/affiliates";
 
-const { name, blurb, icon, href, partner, cta, altHref, altPartner, altCta } = withDefaults(defineProps<{
+const { href, alts } = withDefaults(defineProps<{
   name: string
   blurb: string
   icon: string
+  /** Primary partner link — "" when gated ⇒ the button stays hidden. */
   href: string
   partner: AffiliatePartner
+  /** Primary CTA label (i18n-resolved by the parent: shopCta or a ctaKey). */
   cta: string
-  /** Optional secondary partner (e.g. Decathlon) shown as an outline button. */
-  altHref?: string
-  altPartner?: AffiliatePartner
-  altCta?: string
+  /**
+   * Secondary partner buttons (e.g. Decathlon next to Amazon), config order;
+   * up to 2 are rendered. Each href arrives pre-gated by the engine.
+   */
+  alts?: Array<{ href: string; partner: AffiliatePartner; cta?: string }>
 }>(), {
-  altHref: undefined,
-  altPartner: undefined,
-  altCta: undefined,
+  alts: undefined,
 })
+
+const altButtons = computed(() => (alts ?? []).filter((alt) => alt.href && alt.partner).slice(0, 2))
 </script>
 
 <template>
@@ -47,17 +54,19 @@ const { name, blurb, icon, href, partner, cta, altHref, altPartner, altCta } = w
             {{ partnerLabel(partner) }}
           </UBadge>
           <UBadge
-            v-if="altHref && altPartner"
+            v-for="alt in altButtons"
+            :key="alt.partner"
             color="neutral"
             variant="outline"
             size="xs"
             class="rounded-sm uppercase tracking-wide"
           >
-            {{ partnerLabel(altPartner) }}
+            {{ partnerLabel(alt.partner) }}
           </UBadge>
         </div>
         <div class="grid gap-2 sm:grid-cols-2">
           <UButton
+            v-if="href"
             :to="href"
             :label="cta"
             color="primary"
@@ -71,9 +80,10 @@ const { name, blurb, icon, href, partner, cta, altHref, altPartner, altCta } = w
             trailing-icon="i-heroicons-arrow-top-right-on-square"
           />
           <UButton
-            v-if="altHref && altPartner"
-            :to="altHref"
-            :label="altCta ?? partnerLabel(altPartner)"
+            v-for="alt in altButtons"
+            :key="alt.partner"
+            :to="alt.href"
+            :label="alt.cta ?? partnerLabel(alt.partner)"
             color="neutral"
             variant="outline"
             size="sm"

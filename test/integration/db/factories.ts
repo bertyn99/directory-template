@@ -110,6 +110,9 @@ export async function seedVenue(
   }
   if (overrides.addressId !== undefined) values.addressId = overrides.addressId
   if (overrides.categoryId !== undefined) values.categoryId = overrides.categoryId
+  if (overrides.attributes !== undefined) values.attributes = overrides.attributes
+  if (overrides.franchiseId !== undefined) values.franchiseId = overrides.franchiseId
+  if (overrides.statusCode !== undefined) values.statusCode = overrides.statusCode
 
   const [venue] = await db.insert(venues).values(values).returning()
   return venue

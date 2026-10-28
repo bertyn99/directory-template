@@ -21,18 +21,13 @@ export const LOCALE_MENU_ITEMS: LocaleMenuItem[] = directoryConfig.locales
     code,
   }))
 
-const COMPARATIF_EN = '/blog/niche-directory-vs-marketplace'
-
 /**
- * Per-locale path of the comparatif pillar article. Active locales without a
- * translated entry fall back to the English article (inactive-locale visitors
- * never hit this — the switcher only offers active locales).
+ * Pillar-article links — directoryConfig.content.pillarPaths is the SINGLE
+ * SOURCE (per-locale path of the pillar article). A locale without a
+ * configured path yields `undefined`: consumers MUST hide the link then
+ * (no cross-locale fallback — a fr page never links to the en article).
  */
-export const COMPARATIF_PATHS: Partial<Record<ContentLocale, string>> = {
-  fr: '/blog/annuaire-niche-vs-marketplace',
-  en: COMPARATIF_EN,
-}
-
-export function comparatifPath(locale: string): string {
-  return (isContentLocale(locale) ? COMPARATIF_PATHS[locale] : undefined) ?? COMPARATIF_EN
+export function pillarPath(locale: string): string | undefined {
+  if (!isContentLocale(locale)) return undefined;
+  return directoryConfig.content.pillarPaths[locale];
 }

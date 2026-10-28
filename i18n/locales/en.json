@@ -4,7 +4,7 @@
   },
   "breadcrumb": {
     "items": {
-      "home": {
+      "index": {
         "icon": "heroicons:home",
         "ariaLabel": "Home",
         "label": "Home"
@@ -339,6 +339,7 @@
     "moreActivities": "+{count} more",
     "visitWebsite": "Visit Website",
     "openMap": "Open Map",
+    "bookingCta": "Book now",
     "access": "Access",
     "stats": {
       "tracked": "Venues Tracked",
@@ -383,7 +384,20 @@
     "mapHint": "Click to open in your maps app",
     "subscription": "Subscription",
     "socialMedia": "Social Media",
-    "seoSuffix": "hours, phone & prices"
+    "formulasTitle": "Prices",
+    "equipmentsTitle": "Equipment",
+    "seoSuffix": "hours, phone & prices",
+    "groupMember": "Part of {name}"
+  },
+  "facet": {
+    "group-classes": "Group classes",
+    "open-sundays": "Open on Sundays",
+    "ambiance": {
+      "label": "Atmosphere",
+      "family": "Family-friendly",
+      "performance": "Performance",
+      "relaxed": "Relaxed"
+    }
   },
   "blog": {
     "title": "Latest Posts",
@@ -461,6 +475,28 @@
       "toastErrorDesc": "Check your information."
     }
   },
+  "billing": {
+    "cycle": {
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "free": {
+      "title": "Visitor",
+      "description": "Search and discover venues",
+      "price": "Free",
+      "cta": "Get Started",
+      "features": {
+        "search": "Search venues by location",
+        "profiles": "View venue profiles",
+        "activities": "Browse activities and schedules",
+        "reviews": "Read reviews"
+      }
+    },
+    "mostPopular": "Most Popular",
+    "buyNow": "Buy Now",
+    "signInToBuy": "Sign In to Buy",
+    "manageSubscription": "Manage Subscription"
+  },
   "country_names": {
     "FR": "France",
     "DE": "Germany",
@@ -488,12 +524,36 @@
     "NL": "in"
   },
   "eu_city_names": {
-    "Paris": "Paris",
-    "Berlin": "Berlin",
-    "London": "London",
+    "Amsterdam": "Amsterdam",
     "Barcelona": "Barcelona",
+    "Berlin": "Berlin",
+    "Birmingham": "Birmingham",
+    "Bordeaux": "Bordeaux",
+    "Brussels": "Brussels",
+    "Cologne": "Cologne",
+    "Glasgow": "Glasgow",
+    "Hamburg": "Hamburg",
+    "Lille": "Lille",
+    "Lisbon": "Lisbon",
+    "London": "London",
+    "Lyon": "Lyon",
+    "Madrid": "Madrid",
+    "Marseille": "Marseille",
+    "Milan": "Milan",
+    "Montpellier": "Montpellier",
+    "Munich": "Munich",
+    "Nantes": "Nantes",
+    "Naples": "Naples",
+    "Nice": "Nice",
+    "Paris": "Paris",
+    "Porto": "Porto",
     "Rome": "Rome",
-    "Lisbon": "Lisbon"
+    "Saint-Denis": "Saint-Denis",
+    "Strasbourg": "Strasbourg",
+    "Toulouse": "Toulouse",
+    "Valencia": "Valencia",
+    "Vienna": "Vienna",
+    "Zurich": "Zurich"
   },
   "contact": {
     "title": "Contact Us",
@@ -574,6 +634,9 @@
       "name": "Name",
       "tel": "Phone",
       "website": "Website",
+      "bookingUrl": "Booking URL",
+      "bookingPartner": "Booking partner",
+      "bookingPartnerNone": "No partner",
       "openingHours": "Opening Hours",
       "description": "Description",
       "socialMedia": "Social Media",
@@ -786,6 +849,7 @@
     "nutritionTitle": "Fuel the session",
     "nutritionEyebrow": "Nutrition",
     "shopCta": "Shop",
+    "giftCta": "Gift it",
     "alsoOn": "Also on {partner}",
     "disclosure": "Affiliate links. We may earn a commission if you buy."
   },
@@ -884,5 +948,12 @@
         "body": "This website is governed by French law. In the event of a dispute, please contact us first via the contact page."
       }
     }
+  },
+  "groups": {
+    "badge": "Group",
+    "breadcrumb": "Groups",
+    "venueCount": "{count} venues",
+    "allVenuesBy": "All venues by {name}",
+    "seoTitle": "{name} — {count} venues"
   }
 }

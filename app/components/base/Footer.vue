@@ -65,7 +65,7 @@ v-model="selectedLocale" :items="localeItems" by="code" :search-input="false"
 <script setup lang="ts">
 import type { FooterColumn } from '@nuxt/ui'
 import { MOST_SEARCHED_CATEGORIES, getActivityLocaleSlug } from '~~/shared/activities'
-import { comparatifPath, LOCALE_MENU_ITEMS, type LocaleMenuItem } from '~~/shared/nav'
+import { pillarPath, LOCALE_MENU_ITEMS, type LocaleMenuItem } from '~~/shared/nav'
 import { hasDirectoryGuide } from '~~/shared/silo'
 
 interface FooterCategory {
@@ -128,7 +128,9 @@ const footerColumns = computed<FooterColumn[]>(() => {
     }))
     cityChildren.push({ label: t('footerNav.allCities'), to: localePath('/country') })
 
-    const comparatifTo = localePath(comparatifPath(locale.value))
+    // Pillar-article link — omitted when the active locale has no
+    // directoryConfig.content.pillarPaths entry (never a cross-locale link).
+    const pillarTo = pillarPath(locale.value)
 
     return [
         {
@@ -147,7 +149,9 @@ const footerColumns = computed<FooterColumn[]>(() => {
                 ...(hasDirectoryGuide(locale.value)
                     ? [{ label: t('footerNav.guideVenue'), to: localePath('/venues/guide') }]
                     : []),
-                { label: t('footerNav.comparatif'), to: comparatifTo },
+                ...(pillarTo
+                    ? [{ label: t('footerNav.comparatif'), to: localePath(pillarTo) }]
+                    : []),
                 { label: t('footerNav.contact'), to: localePath('/contact') },
                 { label: t('nav.about'), to: localePath('/about') },
                 { label: t('footerNav.legal'), to: localePath('/legal') },

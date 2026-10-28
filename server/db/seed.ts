@@ -4,12 +4,16 @@
  * Generates realistic test data for:
  * - Users (with hashed passwords)
  * - Countries & Cities (with coordinates)
- * - Venue Categories (Thematiques & Activities) — SAMPLE data
+ * - Venue Categories — DERIVED from directory.config.ts taxonomy
  * - Venues (with relationships to categories, equipment, franchises)
  * - Franchises (venue networks)
- * - Equipment & Formulas (pricing)
+ * - Equipment & Formulas (pricing) — SAMPLE data
  * 
  * Usage: pnpm seed
+ * 
+ * NOTE on drizzle-seed: pinned to 1.0.0-rc.4 — the 0.x line imports
+ * BaseSQLiteDatabase, which drizzle-orm 1.0.0-rc dropped from
+ * drizzle-orm/sqlite-core (seed crashed at import).
  * 
  * Evidence:
  * - Password hashing: https://github.com/atinux/nuxt-auth-utils/blob/main/src/runtime/server/utils/password.ts
@@ -17,11 +21,34 @@
  */
 
 import { seed } from 'drizzle-seed'
+import { eq, sql } from 'drizzle-orm'
 import { hashPassword } from '../utils/auth/password'
-import { sql } from 'drizzle-orm'
-import { useDrizzle } from '#imports'
+import { loadEnvFile } from '../../scripts/load-env'
+import { useDrizzle } from '../utils/drizzle'
 import { directoryConfig } from '../../directory.config'
 import * as schema from './schemas/index'
+
+// drizzle-seed generates rows for EVERY table in the schema it receives.
+// The scraping registry (sources / source_countries) is REAL data owned by
+// the migration chain (20260511083452_seed_sources_and_countries) — exclude
+// those two tables from the generator pass entirely: generated rows would
+// collide with the migration-seeded PKs and their codes would not match the
+// registered adapters. (Refining them to count: 0 is not enough — their FK
+// generators still initialize against the empty pool and throw, and `false`
+// is rejected for notNull columns.)
+// `accounts` is excluded too: PHASE 3/4 create accounts explicitly for every
+// generated user with real (provider, userId) pairs — randomly generated
+// accounts claim overlapping pairs (provider is an enum, so 'credentials'
+// collides) and the unique index accounts_provider_user_idx blows up.
+const SEED_EXCLUDED_TABLES = new Set(['sources', 'sourceCountries', 'accounts'])
+const seedSchema = Object.fromEntries(
+  Object.entries(schema).filter(([name]) => !SEED_EXCLUDED_TABLES.has(name)),
+) as typeof schema
+
+// Standalone tsx script — no Nitro runtime here: .env is loaded manually
+// (same pattern as scripts/bench-queries.ts) and useDrizzle comes from its
+// module (NOT `#imports`, which tsx cannot resolve outside Nuxt).
+loadEnvFile()
 
 const db = useDrizzle()
 
@@ -58,14 +85,17 @@ async function main() {
     // ============================================================================
     console.log('\n🌱 Phase 2: Generating seed data...')
 
-    await seed(db, schema).refine((funcs) => ({
+    await seed(db, seedSchema).refine((funcs) => ({
       // Users: 50 test users
       users: {
         count: 50,
         columns: {
           firstName: funcs.firstName({}),
           lastName: funcs.lastName({}),
-          username: funcs.username({}),
+          // drizzle-seed 1.0.0-rc dropped the `username` generator;
+          // fullName on the unique column is auto-uniquified by the
+          // framework (unique-constraint handling).
+          username: funcs.fullName({}),
           email: funcs.email({}),
           stripeCustomerId: funcs.valuesFromArray({
             values: [null, 'cus_test_001', 'cus_test_002'],
@@ -98,33 +128,21 @@ async function main() {
         },
       },
 
-      // Categories: generic venue categories (SAMPLE data — replace per instantiation)
+      // Categories: seeded explicitly in PHASE 2b from
+      // directoryConfig.taxonomy (not sample data) — skipped here so the
+      // explicit insert controls id order (see below).
       venueCategories: {
-        count: 8,
-        columns: {
-          name: funcs.valuesFromArray({
-            values: [
-              'Fitness',
-              'Yoga',
-              'Spa',
-              'Swimming',
-              'Climbing',
-              'Dance',
-              'Pilates',
-              'Wellness',
-            ],
-          }),
-          activation: funcs.valuesFromArray({ values: [true, false] }),
-        },
+        count: 0,
       },
 
-      // Franchises: Venue networks (optional)
+      // Franchises: Venue networks (optional). ownerId (uuid FK → users.id)
+      // is left to drizzle-seed's FK resolution — an int generator breaks
+      // against the uuid column.
       franchises: {
         count: 5,
         columns: {
           name: funcs.companyName({}),
           isHome: funcs.valuesFromArray({ values: [true, false] }),
-          ownerId: funcs.int({ minValue: 1, maxValue: 10 }),
         },
       },
 
@@ -138,12 +156,19 @@ async function main() {
           }),
           cityId: funcs.int({ minValue: 1, maxValue: 30 }),
           zip: funcs.postcode({}),
-          lat: funcs.number({ minValue: 40, maxValue: 55, precision: 100 }).toString(),
-          lng: funcs.number({ minValue: -5, maxValue: 15, precision: 100 }).toString(),
+          // lat/lng are TEXT columns — drizzle-seed 1.0.0-rc accepts only
+          // generator objects in refinements (the 0.1.x `.toString()` hack
+          // broke), so: sample coordinates of the 6 seed cities.
+          lat: funcs.valuesFromArray({
+            values: ['48.85661444', '45.76404300', '41.38740000', '52.52000800', '41.90280000', '38.72230000'],
+          }),
+          lng: funcs.valuesFromArray({
+            values: ['2.35222190', '4.83565900', '2.16860000', '13.40495400', '12.49640000', '-9.13930000'],
+          }),
         },
       },
 
-      // Thematiques: venue category groupings (SAMPLE data)
+      // Thematiques: venue category groupings (SAMPLE data — per-niche replace)
       thematiques: {
         count: 5,
         columns: {
@@ -168,7 +193,7 @@ async function main() {
         },
       },
 
-      // Activities: sample venue activities (SAMPLE data)
+      // Activities: sample venue activities (SAMPLE data — per-niche replace)
       activities: {
         count: 20,
         columns: {
@@ -200,7 +225,7 @@ async function main() {
         },
       },
 
-      // Equipments: venue equipment (SAMPLE data)
+      // Equipments: venue equipment (SAMPLE data — per-niche replace)
       equipments: {
         count: 12,
         columns: {
@@ -223,12 +248,18 @@ async function main() {
         },
       },
 
-      // Venues: 40 sample venues
+      // Venues: 40 sample venues. categoryId is assigned in PHASE 2b from
+      // the taxonomy-derived venue_categories rows (NULL during the generator
+      // pass — the category rows are inserted explicitly right after, so the
+      // assignment can reference real ids). attributes is NULL during the
+      // generator pass (drizzle-seed would generate random JSONB) and filled
+      // deterministically from taxonomy.facets in PHASE 2d.
       venues: {
         count: 40,
         columns: {
           name: funcs.companyName({}),
-          categoryId: funcs.int({ minValue: 1, maxValue: 8 }),
+          categoryId: funcs.default({ defaultValue: null }),
+          attributes: funcs.default({ defaultValue: null }),
           franchiseId: funcs.valuesFromArray({
             values: [null, 1, 2, 3, 4, 5],
           }),
@@ -282,35 +313,175 @@ async function main() {
         },
       },
 
-      // Venue-Activity relationships
+      // Join tables (venueActivities / venueEquipments / userVenues) are
+      // seeded deterministically in PHASE 2c below — their composite PKs /
+      // unique pairs cannot be generated randomly without collisions
+      // (drizzle-seed 1.0.0-rc does not dedupe pairs).
       venueActivities: {
-        count: 80,
-        columns: {
-          venueId: funcs.int({ minValue: 1, maxValue: 40 }),
-          activityId: funcs.int({ minValue: 1, maxValue: 20 }),
-        },
+        count: 0,
       },
 
-      // Venue-Equipment relationships
+      // Venue-Equipment relationships — deterministic, see PHASE 2c.
       venueEquipments: {
-        count: 100,
-        columns: {
-          venueId: funcs.int({ minValue: 1, maxValue: 40 }),
-          equipmentId: funcs.int({ minValue: 1, maxValue: 12 }),
-        },
+        count: 0,
       },
 
-      // User-Venue relationships (memberships)
+      // User-Venue relationships (memberships) — deterministic, see PHASE 2c
+      // (unique (userId, venueId) pairs; userId is a uuid FK).
       userVenues: {
-        count: 60,
-        columns: {
-          userId: funcs.int({ minValue: 1, maxValue: 50 }),
-          venueId: funcs.int({ minValue: 1, maxValue: 40 }),
-        },
+        count: 0,
       },
     }))
 
     console.log('✅ Seed data generated')
+
+    // ============================================================================
+    // PHASE 2b: CATEGORY TAXONOMY (derived from directory.config.ts)
+    // ============================================================================
+    console.log('\n🗂️  Phase 2b: Seeding category taxonomy...')
+
+    // The venue_categories rows ARE the instantiation's taxonomy (not sample
+    // data): one row per directoryConfig.taxonomy.categories entry, inserted
+    // in config order. On a fresh DB the serial ids are therefore 1..N — the
+    // same mapping taxonomy.seedIds documents for fixed-ID DBs.
+    const taxonomyCategories = directoryConfig.taxonomy.categories
+    if (taxonomyCategories.length === 0) {
+      throw new Error('directoryConfig.taxonomy.categories is empty — a directory needs at least one category.')
+    }
+
+    const categoryRows = await db
+      .insert(schema.venueCategories)
+      .values(
+        taxonomyCategories.map(category => ({
+          name: category.labels.en ?? category.name,
+          activation: true,
+        })),
+      )
+      .returning({ id: schema.venueCategories.id, name: schema.venueCategories.name })
+
+    // Spread venues deterministically across the seeded categories
+    // (round-robin on the serial id). FK-safe for ANY taxonomy size,
+    // including 1-category niches (padel) where every venue lands on the
+    // single row — the previous hardcoded 1..8 range broke there.
+    await db.execute(sql`
+      UPDATE venues
+      SET category_id = (
+        SELECT vc.id
+        FROM venue_categories vc
+        ORDER BY vc.id
+        OFFSET ((venues.id - 1) % (SELECT COUNT(*) FROM venue_categories))
+        LIMIT 1
+      )
+      WHERE EXISTS (SELECT 1 FROM venue_categories)
+    `)
+
+    console.log(`✅ Categories seeded: ${categoryRows.map(row => row.name).join(', ')}`)
+
+    // ============================================================================
+    // PHASE 2c: JOIN TABLES (deterministic pairs)
+    // ============================================================================
+    console.log('\n🔗 Phase 2c: Seeding join tables...')
+
+    // Composite PKs / unique pairs (venue_id+activity_id, venue_id+equipment_id,
+    // user_id+venue_id) collide under random generation, so the pairs are
+    // spread deterministically over the generated parent rows. Ids are read
+    // back from the DB (order-stable), never assumed to be 1..N. A final
+    // dedupe keeps tiny catalogs (1 activity, etc.) from self-colliding.
+    const [venueIdRows, activityIdRows, equipmentIdRows, userIdRows] = await Promise.all([
+      db.select({ id: schema.venues.id }).from(schema.venues).orderBy(schema.venues.id),
+      db.select({ id: schema.activities.id }).from(schema.activities).orderBy(schema.activities.id),
+      db.select({ id: schema.equipments.id }).from(schema.equipments).orderBy(schema.equipments.id),
+      db.select({ id: schema.users.id }).from(schema.users).orderBy(schema.users.id),
+    ])
+
+    function dedupePairs<T extends { venueId?: unknown; userId?: unknown }>(
+      rows: Array<T & { key: string }>,
+    ): Array<T> {
+      const seen = new Set<string>()
+      return rows.flatMap(({ key, ...row }) => {
+        if (seen.has(key)) return []
+        seen.add(key)
+        return [row as T]
+      })
+    }
+
+    if (venueIdRows.length > 0 && activityIdRows.length > 0) {
+      // 2 activities per venue, staggered so every (venue, activity) pair is unique.
+      const venueActivitiesValues = dedupePairs(
+        venueIdRows.flatMap((venue, vi) =>
+          [0, 1].map((k) => ({
+            venueId: venue.id,
+            activityId: activityIdRows[(vi * 2 + k) % activityIdRows.length]?.id,
+            key: `${venue.id}-${(vi * 2 + k) % activityIdRows.length}`,
+          })),
+        ),
+      )
+      await db.insert(schema.venueActivities).values(venueActivitiesValues)
+    }
+
+    if (venueIdRows.length > 0 && equipmentIdRows.length > 0) {
+      // 3 equipments per venue, staggered across the equipment catalog.
+      const venueEquipmentsValues = dedupePairs(
+        venueIdRows.flatMap((venue, vi) =>
+          [0, 1, 2].map((k) => ({
+            venueId: venue.id,
+            equipmentId: equipmentIdRows[(vi * 3 + k) % equipmentIdRows.length]?.id,
+            key: `${venue.id}-${(vi * 3 + k) % equipmentIdRows.length}`,
+          })),
+        ),
+      )
+      await db.insert(schema.venueEquipments).values(venueEquipmentsValues)
+    }
+
+    if (userIdRows.length > 0 && venueIdRows.length > 0) {
+      // 2 venue memberships per user, staggered so no pair repeats.
+      const userVenuesValues = dedupePairs(
+        userIdRows.flatMap((user, ui) =>
+          [0, 1].map((k) => ({
+            userId: user.id,
+            venueId: venueIdRows[(ui * 2 + k) % venueIdRows.length]?.id,
+            key: `${user.id}-${(ui * 2 + k) % venueIdRows.length}`,
+          })),
+        ),
+      )
+      await db.insert(schema.userVenues).values(userVenuesValues)
+    }
+
+    console.log('✅ Join tables seeded (venue_activities, venue_equipments, user_venues)')
+
+    // ============================================================================
+    // PHASE 2d: FACET ATTRIBUTES (deterministic, derived from directory.config.ts)
+    // ============================================================================
+    console.log('\n🏷️  Phase 2d: Seeding venue attributes...')
+
+    // venues.attributes is SAMPLE data built from taxonomy.facets — the same
+    // facets the public chips + filters render/filter, so a fresh dev DB has
+    // data for every control. Values spread deterministically by venue index
+    // (booleans alternate, enums rotate their whitelisted values), mirroring
+    // how equipments/activities are spread in PHASE 2c.
+    const facets = directoryConfig.taxonomy.facets
+    if (facets.length > 0) {
+      const venueRows = venueIdRows.length > 0
+        ? venueIdRows
+        : await db.select({ id: schema.venues.id }).from(schema.venues).orderBy(schema.venues.id)
+
+      for (const [vi, venue] of venueRows.entries()) {
+        const attributes: Record<string, unknown> = {}
+        for (const [fi, facet] of facets.entries()) {
+          if (facet.kind === 'boolean') {
+            attributes[facet.key] = (vi + fi) % 2 === 0
+          } else if (facet.kind === 'enum' && facet.values && facet.values.length > 0) {
+            attributes[facet.key] = facet.values[(vi + fi) % facet.values.length]
+          }
+        }
+        if (Object.keys(attributes).length > 0) {
+          await db.update(schema.venues).set({ attributes }).where(eq(schema.venues.id, venue.id))
+        }
+      }
+      console.log(`✅ Attributes seeded for ${venueRows.length} venues (${facets.length} facets)`)
+    } else {
+      console.log('ℹ️  No taxonomy.facets configured — skipping attribute seeding')
+    }
 
     // ============================================================================
     // PHASE 3: HASH PASSWORDS

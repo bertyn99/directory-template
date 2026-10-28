@@ -63,8 +63,12 @@ const umamiCspOrigin = (() => {
 // - affiliate product icons are DERIVED from directoryConfig.affiliates
 //   (.products[].icon, stored as UIcon names "i-<collection>-<name>" — the
 //   safelist wants "<collection>:<name>" colon format);
-// - the category icon map in app/components/venue/Card.vue
-//   (getCategoryIcon()) is a hand-written runtime map and stays static.
+// - category icons are DERIVED from directoryConfig.taxonomy
+//   (.categories[].icon, same "i-<collection>-<name>" format — consumed by
+//   app/components/venue/Card.vue via the shared/activities.ts catalog);
+// - the keyword-icon FALLBACK map in app/components/venue/Card.vue
+//   (getCategoryIcon(), used when a category carries no config icon) is a
+//   hand-written runtime map and stays static.
 const categoryIcons = [
   "lucide:map-pin",
   "lucide:flower-2",
@@ -72,9 +76,19 @@ const categoryIcons = [
   "lucide:music",
   "lucide:activity",
 ];
+const toSafelistFormat = (icon: string) =>
+  icon.replace(/^i-/, "").replace("-", ":");
 const affiliateProductIcons = directoryConfig.affiliates.products.map((product) =>
-  product.icon.replace(/^i-/, "").replace("-", ":"),
+  toSafelistFormat(product.icon),
 );
+const taxonomyCategoryIcons = [
+  ...new Set(
+    directoryConfig.taxonomy.categories
+      .map((category) => category.icon)
+      .filter((icon): icon is string => Boolean(icon))
+      .map(toSafelistFormat),
+  ),
+];
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-06-03",
@@ -145,8 +159,10 @@ export default defineNuxtConfig({
         "mdi:subway-variant",
         "mdi:train-variant",
         "mdi:help-circle",
-        // Category icon map in app/components/venue/Card.vue (getCategoryIcon()).
+        // Keyword-icon fallback map in app/components/venue/Card.vue (getCategoryIcon()).
         ...categoryIcons,
+        // Category icons (directoryConfig.taxonomy.categories[].icon).
+        ...taxonomyCategoryIcons,
         // Sample affiliate product icons (directoryConfig.affiliates.products).
         ...affiliateProductIcons,
       ],
@@ -328,6 +344,9 @@ export default defineNuxtConfig({
           categoryDetail:
             process.env.NUXT_PUBLIC_ADSENSE_SLOT_CATEGORY_DETAIL
             || directoryConfig.ads.adsense.slots.categoryDetail,
+          venueDetail:
+            process.env.NUXT_PUBLIC_ADSENSE_SLOT_VENUE_DETAIL
+            || directoryConfig.ads.adsense.slots.venueDetail,
         },
       },
     },

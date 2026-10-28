@@ -12,11 +12,16 @@ import {
   findActivityDefinition,
   getActivityDisplayName,
 } from "~~/shared/activities";
+import { directoryConfig } from "~~/directory.config";
 import { excerptPlainText, isContentLocale, type ContentLocale } from "~~/shared/silo";
 
-const ARRAY_FIELDS = ["techniques", "keyPoints", "competitions", "equipments", "contraindications", "benefits"] as const;
+// "competitions" is deliberately NOT in the set: sports-shaped dead weight
+// for the neutral template (the DB column stays — legacy, append-only).
+const ARRAY_FIELDS = ["techniques", "keyPoints", "equipments", "contraindications", "benefits"] as const;
 
-const DEFAULT_LOCALES = ["fr", "en"];
+// Active locales (directoryConfig.locales) — the 04:00 cron then covers
+// exactly the activated set; payload.locales still overrides per run.
+const DEFAULT_LOCALES: string[] = [...directoryConfig.locales];
 const ACTIVITY_CONCURRENCY = 3;
 
 function needsGeneration(
@@ -129,29 +134,53 @@ function mergeContent(
   };
 }
 
+/**
+ * NICHE-NEUTRAL fallback FAQ for generated category hubs — used when Gemini
+ * returns no usable FAQ. Three venue questions that make sense for ANY
+ * directory niche (pricing / booking / on-site facilities); no
+ * sports-specific vocabulary (licence, trial class, federation…), so a spa
+ * or padel instantiation never ships fitness-flavoured copy. Every shipped
+ * locale has verified wording; unknown locales fall back to the default
+ * locale's copy.
+ */
 function defaultHubFaq(categoryName: string, locale: ContentLocale): Array<{ q: string, a: string }> {
   switch (locale) {
     case "fr":
       return [
-        { q: `Où pratiquer le ${categoryName} près de chez moi ?`, a: `Utilisez les villes de la page ${categoryName} pour ouvrir la liste des venues, puis contactez la salle pour un essai.` },
-        { q: `Combien coûte un venue de ${categoryName} ?`, a: `Les tarifs varient selon la ville et la formule. Demandez le détail et l'essai directement au venue.` },
-        { q: `Peut-on pratiquer le ${categoryName} en enfant ?`, a: `Beaucoup de venues proposent des cours enfants. Vérifiez l'âge minimum et les créneaux sur la fiche du venue.` },
-        { q: `Comment réserver un cours d'essai de ${categoryName} ?`, a: `Ouvrez une fiche venue, contactez-les et demandez un essai. La plupart des salles proposent un premier cours gratuit ou à petit prix.` },
-        { q: `Faut-il une licence pour pratiquer le ${categoryName} ?`, a: `Souvent oui, via la fédération du venue. Demandez ce que la cotisation inclut avant de vous engager.` },
+        { q: `Quels sont les tarifs moyens pour un ${categoryName} ?`, a: `Les tarifs varient selon la ville, la formule et les équipements. Comparez plusieurs établissements ${categoryName} et demandez le détail des prestations directement au venue avant de vous engager.` },
+        { q: `Faut-il réserver à l'avance pour un ${categoryName} ?`, a: `Cela dépend des établissements : certains accueillent les visites sans rendez-vous, d'autres fonctionnent sur réservation. Contactez le venue pour confirmer les créneaux et les conditions d'accès.` },
+        { q: `Quels équipements sont disponibles dans un ${categoryName} ?`, a: `L'équipement varie d'un établissement à l'autre. La fiche de chaque venue détaille les installations et les services proposés : vérifiez-les avant votre visite.` },
       ]
     case "en":
       return [
-        { q: `Where can I train ${categoryName} near me?`, a: `Use the cities on the ${categoryName} page to open the venue list, then contact the gym for a trial.` },
-        { q: `How much does a ${categoryName} venue cost?`, a: `Prices vary by city and membership. Ask the venue directly for fees and a trial class.` },
-        { q: `Can children practice ${categoryName}?`, a: `Many venues run kids' classes. Check the minimum age and schedule on the venue page.` },
-        { q: `How do I book a ${categoryName} trial class?`, a: `Open a venue page, contact them, and ask for a trial. Most gyms offer a first class free or at a low price.` },
-        { q: `Do I need a licence to practice ${categoryName}?`, a: `Often yes, through the venue's federation. Ask what the membership includes before you commit.` },
+        { q: `What are the average prices for a ${categoryName}?`, a: `Prices vary by city, plan and facilities. Compare several ${categoryName} venues and ask each venue for a detailed quote before you commit.` },
+        { q: `Do I need to book a ${categoryName} in advance?`, a: `It depends on the venue: some welcome drop-in visits, others work by appointment only. Contact the venue to confirm opening hours and access conditions.` },
+        { q: `What facilities are available at a ${categoryName}?`, a: `Facilities differ from one venue to the next. Each venue page lists its installations and services, so check them before your visit.` },
       ]
     case "de":
+      return [
+        { q: `Was kostet ein ${categoryName} im Durchschnitt?`, a: `Die Preise variieren je nach Stadt, Tarif und Ausstattung. Vergleichen Sie mehrere ${categoryName}-Venues und erfragen Sie die Details direkt beim Venue, bevor Sie sich entscheiden.` },
+        { q: `Muss man ein ${categoryName} im Voraus buchen?`, a: `Das hängt vom Venue ab: Manche empfangen Besucher ohne Termin, andere arbeiten nur mit Terminvereinbarung. Kontaktieren Sie das Venue, um Öffnungszeiten und Zugangsbedingungen zu klären.` },
+        { q: `Welche Ausstattung ist in einem ${categoryName} verfügbar?`, a: `Die Ausstattung unterscheidet sich von Venue zu Venue. Auf der Detailseite jedes Venues sind Anlagen und Services aufgeführt. Prüfen Sie sie vor Ihrem Besuch.` },
+      ]
     case "es":
+      return [
+        { q: `¿Cuáles son los precios medios de un ${categoryName}?`, a: `Los precios varían según la ciudad, la fórmula y los servicios. Compara varios venues de ${categoryName} y pide el detalle directamente a cada establecimiento antes de decidirte.` },
+        { q: `¿Hay que reservar un ${categoryName} con antelación?`, a: `Depende del establecimiento: algunos reciben visitas sin cita, otros funcionan solo con reserva. Contacta con el venue para confirmar horarios y condiciones de acceso.` },
+        { q: `¿Qué instalaciones están disponibles en un ${categoryName}?`, a: `Las instalaciones varían de un establecimiento a otro. La ficha de cada venue detalla sus instalaciones y servicios: consúltalos antes de tu visita.` },
+      ]
     case "it":
+      return [
+        { q: `Quali sono i prezzi medi di un ${categoryName}?`, a: `I prezzi variano in base alla città, alla formula e ai servizi. Confronta diversi venue di ${categoryName} e chiedi il dettaglio direttamente a ogni stabilimento prima di decidere.` },
+        { q: `Bisogna prenotare un ${categoryName} in anticipo?`, a: `Dipende dallo stabilimento: alcuni accettano visite senza appuntamento, altri funzionano solo su prenotazione. Contatta il venue per confermare orari e condizioni di accesso.` },
+        { q: `Quali attrezzature sono disponibili in un ${categoryName}?`, a: `Le attrezzature variano da uno stabilimento all'altro. La scheda di ogni venue elenca impianti e servizi: controllali prima della tua visita.` },
+      ]
     case "pt":
-      return defaultHubFaq(categoryName, "en")
+      return [
+        { q: `Quais são os preços médios de um ${categoryName}?`, a: `Os preços variam conforme a cidade, o plano e as instalações. Compare vários venues de ${categoryName} e peça o detalhe diretamente a cada estabelecimento antes de decidir.` },
+        { q: `É preciso reservar um ${categoryName} com antecedência?`, a: `Depende do estabelecimento: alguns recebem visitas sem marcação, outros funcionam apenas com reserva. Contacte o venue para confirmar horários e condições de acesso.` },
+        { q: `Que instalações estão disponíveis num ${categoryName}?`, a: `As instalações variam de estabelecimento para estabelecimento. A ficha de cada venue lista as instalações e os serviços: verifique-os antes da sua visita.` },
+      ]
     default: {
       const unreachable: never = locale
       return unreachable
@@ -163,7 +192,7 @@ export default defineTask({
   meta: {
     name: "generate-category-content",
       description:
-        "Auto-generate category content for activities. Payload: { force?: boolean, fields?: string[], locales?: string[] }. Defaults to fr/en.",
+        "Auto-generate category content for activities. Payload: { force?: boolean, fields?: string[], locales?: string[] }. Defaults to the active locales (directoryConfig.locales).",
   },
   async run({ payload }) {
     const config = useRuntimeConfig();
@@ -189,7 +218,6 @@ export default defineTask({
         slug: true,
         techniques: true,
         keyPoints: true,
-        competitions: true,
         equipments: true,
         contraindications: true,
         benefits: true,
@@ -313,7 +341,7 @@ export default defineTask({
               wroteHub = true
             })());
           }
-          // Array fields (techniques, keyPoints, competitions, equipments)
+          // Array fields (techniques, keyPoints, equipments)
           const fieldsToProcess = fieldFilter
             ? ARRAY_FIELDS.filter((f) => fieldFilter.includes(f))
             : ARRAY_FIELDS;

@@ -12,7 +12,7 @@ type GenerateContentData =
 
 interface GenerateContentParams {
   type: "category" | "venue" | "venueEnrich";
-  subType: "keyPoints" | "competitions" | "techniques" | "equipments" | "content";
+  subType: "keyPoints" | "techniques" | "equipments" | "content";
   data: GenerateContentData;
   languages: string | null;
 }

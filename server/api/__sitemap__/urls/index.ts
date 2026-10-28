@@ -1,4 +1,5 @@
 import { getAllVenueSlugs, getCategoryCityCombinations } from "~~/server/db/queries/venues";
+import { getPublicFranchiseSlugs } from "~~/server/db/queries/franchises";
 import { listActivities } from "~~/server/db/queries/categories";
 import { getCityHubSlugs } from "~~/server/db/queries/cities";
 import { queryCollection } from "@nuxt/content/server";
@@ -17,13 +18,14 @@ import {
 } from "~~/shared/major-eu-cities";
 
 export default defineSitemapEventHandler(async (event) => {
-  const [venueSlugs, categoryCityPairs, cityHubSlugs, dbActivities] = await Promise.all([
+  const [venueSlugs, categoryCityPairs, cityHubSlugs, dbActivities, franchiseSlugs] = await Promise.all([
     getAllVenueSlugs(),
     getCategoryCityCombinations(),
     getCityHubSlugs(),
     // Canonical activities that actually exist in the DB — avoids emitting
     // sitemap URLs for catalog entries with no DB row (404 prevention).
     listActivities(undefined, "en"),
+    getPublicFranchiseSlugs(),
   ]);
 
   // Build the set of canonical English slugs that have a DB row, so the categories
@@ -55,6 +57,15 @@ export default defineSitemapEventHandler(async (event) => {
       _i18nTransform: true,
     }),
   );
+
+  const groupsSitemap = franchiseSlugs
+    .filter((row): row is { slug: string } => Boolean(row.slug))
+    .map((row) =>
+      asSitemapUrl({
+        loc: "groups/" + row.slug,
+        _i18nTransform: true,
+      }),
+    );
 
   const seenCategoryCity = new Set<string>();
   const categoryCitySitemap = categoryCityPairs.flatMap((pair) => {
@@ -132,6 +143,7 @@ export default defineSitemapEventHandler(async (event) => {
 
   return [
     ...venuesSitemap,
+    ...groupsSitemap,
     ...categoriesSitemap,
     ...categoryCitySitemap,
     ...cityHubSitemap,

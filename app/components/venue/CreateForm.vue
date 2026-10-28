@@ -26,6 +26,16 @@ v-if="item.label !== 'Address'" :schema="insertVenueSchema" :state="state" class
                     <UFormField label="Website" name="website">
                         <UInput v-model="state.website" type="url" :ui="{ rounded: 'rounded-sm' }" />
                     </UFormField>
+                    <UFormField label="Booking URL" name="bookingUrl">
+                        <UInput v-model="state.bookingUrl" type="url" :ui="{ rounded: 'rounded-sm' }" />
+                    </UFormField>
+                    <UFormField
+v-if="bookingPartnerItems.length" label="Booking Partner"
+                        name="bookingPartner">
+                        <USelect
+v-model="state.bookingPartner" :items="bookingPartnerItems"
+                            placeholder="— None —" :ui="{ rounded: 'rounded-sm' }" />
+                    </UFormField>
                     <UFormField label="Telephone" name="tel">
                         <UInput v-model="state.tel" type="tel" :ui="{ rounded: 'rounded-sm' }" />
                     </UFormField>
@@ -71,6 +81,8 @@ import type { z } from 'zod'
 import type { FormSubmitEvent, FormError, FormErrorEvent, } from '#ui/types'
 import { insertVenueSchema, insertVenueWithAddressSchema, insertAddressSchema } from '~~/server/db/schemas';
 import { useCitySearch } from '~/composables/useCitySearch'
+import { directoryConfig } from '~~/directory.config'
+import { localizedCopy } from '~~/shared/affiliates'
 
 
 const { close } = defineProps({
@@ -122,6 +134,8 @@ const state = reactive({
         pt: { text: '', intro: '' },
     },
     website: undefined as string | undefined,
+    bookingUrl: undefined as string | undefined,
+    bookingPartner: undefined as string | undefined,
     tel: '',
     address: {
         street1: undefined,
@@ -131,6 +145,15 @@ const state = reactive({
         zip: undefined,
     }
 })
+
+/** Booking partner options (directoryConfig.booking.partners) — the select
+    is hidden entirely when the list is empty (plain CTAs only). */
+const bookingPartnerItems = computed(() => [
+    ...directoryConfig.booking.partners.map(partner => ({
+        label: localizedCopy(partner.label, locale.value),
+        value: partner.id,
+    })),
+])
 
 const onSubmitStep1 = (event: FormSubmitEvent<Schema>) => {
     // Handle form submission
@@ -146,9 +169,15 @@ const onSubmitStep2 = async (event: FormSubmitEvent<SchemaWithAddress>) => {
     console.log(event.data)
     loading.value = true;
     try {
+        // Schema convention (see insertVenueSchema): empty form fields are sent
+        // as ABSENT keys — "" is not a valid URL.
 const venueRes = await useRequestFetch()("/api/users/venues", {
 method: "POST",
-body: state,
+body: {
+                ...state,
+                bookingUrl: state.bookingUrl || undefined,
+                bookingPartner: state.bookingPartner || undefined,
+            },
             headers: { 'csrf-token': csrf }
         })
 loading.value = false;

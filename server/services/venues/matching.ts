@@ -5,6 +5,7 @@ import type { VenueRecordForAI } from "./aiMatcher";
 import { getAIMatcher } from "./aiMatcher";
 import { geocodeAddress } from "../location/geocoding";
 import { deriveActivitySlugsFromSource } from "../scraping/activities";
+import { attributesFromSourceRaw, mergeVenueAttributes } from "./ingest";
 import { translateVenue } from '../translation/autoTranslate';
 
 /**
@@ -580,6 +581,10 @@ export async function matchVenueSource(
         website: venueSource.website || undefined,
         addressId: venueSource.addressId || undefined,
         aliases: [],
+        // Source-declared attributes land on the venue row at creation (INSERT:
+        // set directly — see mergeVenueAttributes in ingest.ts, whose
+        // fill-missing-only rule any future attribute update path must reuse).
+        attributes: mergeVenueAttributes(null, attributesFromSourceRaw(venueSource.raw)),
       })
       .returning({ id: venues.id });
     if (!newVenue) {

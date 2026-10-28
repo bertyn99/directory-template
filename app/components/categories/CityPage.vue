@@ -427,7 +427,8 @@ const cityDisplayName = computed(() => t(`eu_city_names.${cityName.value}`, city
 const bannerSrc = computed(() => {
   const major = majorEuCityFromPublicSlug(citySlug.value)
   if (major) return majorEuCityImageSrc(major)
-  return categoryData.value?.image ? `/${categoryData.value.image}` : '/img/cities/paris.jpg'
+  // Neutral placeholder — never a real city photo on a non-featured city page.
+  return categoryData.value?.image ? `/${categoryData.value.image}` : '/img/venue-fallback.png'
 })
 
 // French elision for category names: "l'Aquatique" / "d'Aquatique" instead of

@@ -66,17 +66,19 @@ export function useAffiliate() {
       const link = productLink(product.id, undefined, subid);
       return {
         product,
-        href: link?.href ?? "#",
+        href: link?.href ?? "",
         partner: link?.partner ?? product.partner,
-        alt: link?.alt?.href ? link.alt : undefined,
+        alts: (link?.alts ?? []).filter((alt) => alt.href),
       };
     });
   }
 
   /**
    * Single-product pick (the `::nutrition-pick` MDC block). Unknown ids fall
-   * back to the first kit product. Always resolves — Amazon links work
-   * without tags, and the secondary partner stays gated by its program.
+   * back to the first kit product. Resolves to undefined when the product's
+   * primary partner is gated in the current locale (unconfigured direct or
+   * config partner ⇒ the whole affiliate block stays hidden); Amazon links
+   * always resolve.
    */
   function nutritionFor(productId: string, partner?: string) {
     const id = getAffiliateProduct(productId)
@@ -86,7 +88,7 @@ export function useAffiliate() {
       return undefined;
     }
     const link = productLink(id, partner);
-    if (!link) {
+    if (!link?.href) {
       return undefined;
     }
     return {

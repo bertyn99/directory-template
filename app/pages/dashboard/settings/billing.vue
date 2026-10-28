@@ -181,8 +181,8 @@ const paidTiers = computed(() =>
                   <span class="text-2xl font-bold font-display">
                     {{ isYearly === '1' ? tier.price.yearly : tier.price.monthly }}
                   </span>
-                  <span v-if="tier.billingCycle" class="text-sm text-muted">
-                    {{ isYearly === '1' ? '/year' : tier.billingCycle }}
+                  <span class="text-sm text-muted">
+                    {{ isYearly === '1' ? $t('billing.cycle.yearly') : $t('billing.cycle.monthly') }}
                   </span>
                 </div>
 

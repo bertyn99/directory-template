@@ -26,6 +26,18 @@ export interface PlaceData {
   description?: unknown;
   socialMedia?: unknown;
   type?: unknown;
+  /**
+   * Per-niche scraped attributes riding along with the place (e.g. surface
+   * type for padel clubs, star rating / wellness areas for spas). No engine
+   * consumer in the template — the full payload is kept in venue_sources.raw
+   * either way; this typing makes the shape explicit for adapters.
+   */
+  attributes?: Record<string, unknown>;
+  /**
+   * Per-niche price lines scraped from the source (e.g. "Open play 1h").
+   * No engine consumer in the template — additive typing for adapters.
+   */
+  prices?: Array<{ label: string; amount: number; duration?: string }>;
   /** Full original payload from the provider */
   raw?: unknown;
 }

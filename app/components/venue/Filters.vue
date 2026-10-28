@@ -71,6 +71,27 @@ v-model="selectedActivities" :items="activities" :loading="loadingActivities"
                         @update:search-term="onActivitySearch" />
                 </UFormField>
 
+                <!-- Facet filters — dynamic from directoryConfig.taxonomy.facets
+                     (filterable only): boolean → USwitch, enum → USelectMenu
+                     (i18n labels via the facet.* key family). A niche that
+                     replaces taxonomy.facets gets different controls with zero
+                     edits in this file. -->
+                <UFormField
+v-for="facet in facetDefs" :key="facet.key"
+                    :label="$t(facetLabelKey(facet))"
+                    :ui="{ label: 'text-xs uppercase tracking-[0.25em] text-muted mb-2' }">
+                    <USwitch
+v-if="facet.kind === 'boolean'"
+                        :model-value="isBooleanFacetSelected(facet.key)"
+                        @update:model-value="checked => setBooleanFacet(facet.key, checked)" />
+                    <USelectMenu
+v-else
+                        :model-value="enumFacetSelection(facet)" :items="enumFacetItems(facet)"
+                        by="value" clear :placeholder="$t(facetLabelKey(facet))"
+                        class="rounded-sm w-full"
+                        @update:model-value="item => setEnumFacet(facet, item)" />
+                </UFormField>
+
                 <!-- Apply and Reset buttons -->
                 <div class="flex gap-2 pt-2">
                     <UButton
@@ -92,6 +113,8 @@ color="gray" variant="ghost"
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
+import { facetLabelKey, facetValueLabelKey, filterableFacets } from '~~/shared/facets'
+import type { FacetConfig } from '~~/shared/facets'
 
 const { t, locale } = useI18n()
 const selectedCountry = defineModel<{
@@ -102,6 +125,56 @@ const selectedCity = defineModel<{
 } | null>('selectedCity')
 const selectedActivities = defineModel<{ id: number; name: string; slug: string }[]>('selectedActivities')
 const searchName = defineModel<string>('searchName')
+
+// Facet selection — key → value map ("true" for booleans, enum value
+// otherwise), serialized by the parent as repeated `facet=key:value` params.
+const selectedFacets = defineModel<Record<string, string>>('selectedFacets', { default: () => ({}) })
+
+// Facet definitions come straight from the config (filterable only —
+// filterable: false facets are display-only chips on the venue page).
+const facetDefs = filterableFacets()
+
+function currentFacets(): Record<string, string> {
+    return selectedFacets.value ?? {}
+}
+
+/** Set or unset one facet key (value null ⇒ removed from the selection). */
+function setFacetValue(key: string, value: string | null) {
+    const entries = Object.entries(currentFacets()).filter(([facetKey]) => facetKey !== key)
+    if (value !== null) entries.push([key, value])
+    selectedFacets.value = Object.fromEntries(entries)
+}
+
+function isBooleanFacetSelected(key: string): boolean {
+    return currentFacets()[key] === 'true'
+}
+
+function setBooleanFacet(key: string, checked: unknown) {
+    setFacetValue(key, checked === true ? 'true' : null)
+}
+
+function enumFacetItems(facet: FacetConfig) {
+    return (facet.values ?? []).map(value => ({
+        label: t(facetValueLabelKey(facet, value)),
+        value,
+    }))
+}
+
+function enumFacetSelection(facet: FacetConfig) {
+    const value = currentFacets()[facet.key]
+    if (!value || !(facet.values ?? []).includes(value)) return undefined
+    return { label: t(facetValueLabelKey(facet, value)), value }
+}
+
+function setEnumFacet(facet: FacetConfig, item: unknown) {
+    const rawValue = item !== null && typeof item === 'object' && 'value' in item
+        ? String((item as { value: unknown }).value)
+        : null
+    setFacetValue(
+        facet.key,
+        rawValue !== null && (facet.values ?? []).includes(rawValue) ? rawValue : null,
+    )
+}
 
 const emit = defineEmits(['apply-filters', 'reset-filters'])
 
@@ -206,6 +279,9 @@ onMounted(async () => {
         }))
         cities.value = Array.isArray(citiesData) ? citiesData : []
         activities.value = categoriesData.data ?? []
+    } catch {
+        // Ignore fetch errors (API down / offline dev) — the filter lists
+        // simply stay empty, same policy as the debounced fetchers below.
     } finally {
         loadingCountries.value = false
         loadingCities.value = false
