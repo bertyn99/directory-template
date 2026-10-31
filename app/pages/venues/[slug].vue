@@ -12,11 +12,15 @@
                             <UIcon name="i-heroicons-map-pin" class="text-primary" />
                             <span>{{ locationLabel }}</span>
                         </p>
+                        <!-- Group membership — links to the public "all venues
+                             of this franchise" hub. Renders only when the venue
+                             is actually attached to a franchise. -->
                         <NuxtLink
                             v-if="venue.franchise?.slug"
                             :to="localePath(`/groups/${venue.franchise.slug}`)"
                             class="inline-flex items-center gap-1 text-sm text-primary underline decoration-primary decoration-2 underline-offset-4"
                         >
+                            <UIcon name="i-lucide-building-2" class="size-4" />
                             {{ $t('venues.groupMember', { name: venue.franchise.name }) }}
                         </NuxtLink>
                     </div>

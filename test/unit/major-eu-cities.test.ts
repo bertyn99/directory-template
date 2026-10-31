@@ -26,16 +26,40 @@ describe("major EU city cards", () => {
     expect(cards.find((card) => card.name === "Lisbon")?.venueCount).toBe(3);
   });
 
-  it("returns one card per major EU city", () => {
+  it("returns one card per major EU city (the 30 shipped banner cities)", () => {
     const cards = toMajorEuCityCards([]);
 
     expect(cards.map((card) => card.name).sort()).toEqual([
+      "Amsterdam",
       "Barcelona",
       "Berlin",
+      "Birmingham",
+      "Bordeaux",
+      "Brussels",
+      "Cologne",
+      "Glasgow",
+      "Hamburg",
+      "Lille",
       "Lisbon",
       "London",
+      "Lyon",
+      "Madrid",
+      "Marseille",
+      "Milan",
+      "Montpellier",
+      "Munich",
+      "Nantes",
+      "Naples",
+      "Nice",
       "Paris",
+      "Porto",
       "Rome",
+      "Saint-Denis",
+      "Strasbourg",
+      "Toulouse",
+      "Valencia",
+      "Vienna",
+      "Zurich",
     ]);
   });
 

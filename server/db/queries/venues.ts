@@ -344,6 +344,8 @@ export async function getVenueBySlug(slug: string) {
           },
         },
       },
+      // Public "all venues of this group" link on the venue page — id/slug/name
+      // only (ownerId etc. never leave the dashboard queries).
       franchise: {
         columns: {
           id: true,

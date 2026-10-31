@@ -8,8 +8,11 @@ import { SCRAPING_SOURCE_IDS } from "./ids";
 /**
  * Registry of all available scraping sources.
  *
- * The template ships two REFERENCE adapters (multi-sport venue aggregators).
- * Each instantiation replaces them with adapters for its own data sources.
+ * The template ships REFERENCE adapters: two multi-sport venue aggregators
+ * (masalledesport — Playwright HTML crawl; fitnesspark — server-rendered
+ * HTML) and one JSON no-browser archetype (osm-overpass — plain HTTP JSON
+ * API for govt datasets/OSM/Maps sources). Each instantiation replaces them
+ * with adapters for its own data sources.
  *
  * Adapters are CODE (Playwright parsers — logic, not config). What IS config
  * is which of them are active: `directoryConfig.scraping.sources` selects

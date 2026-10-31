@@ -1,4 +1,4 @@
-import { eq, and, asc, sql } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import { addresses, cities, countries, franchises, venues } from '../schemas'
 import { useDrizzle } from '~~/server/utils/drizzle'
 import type { InsertFranchise } from '~~/server/types'
@@ -51,8 +51,9 @@ export async function getFranchiseByIdAndOwnerId(id: number, ownerId: string) {
 
 /**
  * Public group page: a franchise is listed only when it has ≥1 venue with
- * statusCode = 'active' (the same public-listing gate as /venues). No
- * dedicated isPublic flag — v1 gates on live venues.
+ * statusCode = 'active' (the same public-listing gate as /venues — venues
+ * have no dedicated visibility flag, v1 gates on live venues). Owner fields
+ * (ownerId, isHome) are never selected; only public-safe columns.
  */
 export async function getPublicFranchiseBySlug(slug: string) {
   const db = useDrizzle()
@@ -112,5 +113,4 @@ export async function getPublicFranchiseSlugs() {
     .innerJoin(venues, eq(venues.franchiseId, franchises.id))
     .where(eq(venues.statusCode, 'active'))
     .groupBy(franchises.slug)
-    .having(sql`count(${venues.id}) > 0`)
 }

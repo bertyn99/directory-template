@@ -40,8 +40,8 @@ function extractSourceVenueId(place: PlaceData): string | null {
   // Try to extract from raw data if it's an object
   if (place.raw && typeof place.raw === "object") {
     const raw = place.raw as Record<string, unknown>;
-    if (raw.id != null && (typeof raw.id === "string" || typeof raw.id === "number")) {
-      return String(raw.id);
+    if (raw.id && typeof raw.id === "string") {
+      return raw.id;
     }
     if (raw.slug && typeof raw.slug === "string") {
       return raw.slug;

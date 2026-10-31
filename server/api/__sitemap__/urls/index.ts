@@ -25,6 +25,8 @@ export default defineSitemapEventHandler(async (event) => {
     // Canonical activities that actually exist in the DB — avoids emitting
     // sitemap URLs for catalog entries with no DB row (404 prevention).
     listActivities(undefined, "en"),
+    // Public group pages: only franchises with ≥1 active venue (the query
+    // groups by slug, so the emission can never 404).
     getPublicFranchiseSlugs(),
   ]);
 
@@ -58,6 +60,8 @@ export default defineSitemapEventHandler(async (event) => {
     }),
   );
 
+  // Public group hubs — one URL per franchise with ≥1 public venue, same
+  // locale-prefixed alternates convention as /venues/** (_i18nTransform).
   const groupsSitemap = franchiseSlugs
     .filter((row): row is { slug: string } => Boolean(row.slug))
     .map((row) =>

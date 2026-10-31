@@ -89,7 +89,7 @@ Node 24 (`.nvmrc`/engines), pnpm ≥11 (`packageManager: pnpm@11.8.0`).
 | Task | Location | Notes |
 |------|----------|-------|
 | Instantiate a niche | `directory.config.ts` | Then follow the 7-step workflow above |
-| Add a page | `app/pages/` | Pages: `/` home, `/venues` + `/venues/[slug]`, `/groups/[slug]` (public franchise/group page — listed only when the group has ≥1 `statusCode=active` venue; no dedicated isPublic flag), `/categories` hub + `/categories/[category]` + `/categories/[category]/[cities]` — ONE dispatch route serving BOTH the silo spokes (config data: `directoryConfig.content.siloSpokes`, e.g. `/guide`, `/choisir-venue`, `/comparer`, `/tarifs`, `/equipement`, `/techniques`) and the category×city pages — plus `/country/**` location browsing, `/blog` + `/blog/[slug]`, `/contact`, `/about`, `/legal`, `/auth/*`, `/dashboard/**` (auth middleware), `/dashboard/admin/match-candidates` |
+| Add a page | `app/pages/` | Pages: `/` home, `/venues` + `/venues/[slug]`, `/groups/[slug]` (public franchise hub), `/categories` hub + `/categories/[category]` + `/categories/[category]/[cities]` — ONE dispatch route serving BOTH the silo spokes (config data: `directoryConfig.content.siloSpokes`, e.g. `/guide`, `/choisir-venue`, `/comparer`, `/tarifs`, `/equipement`, `/techniques`) and the category×city pages — plus `/country/**` location browsing, `/blog` + `/blog/[slug]`, `/contact`, `/about`, `/legal`, `/auth/*`, `/dashboard/**` (auth middleware), `/dashboard/admin/match-candidates` |
 | Add a component | `app/components/{domain}/` | Domain: base, venue, categories, section, content, affiliate, ads, auth, blog, sidebar, modal, franchise, dashboard, admin, OgImage, prose |
 | Add a composable | `app/composables/` | Pattern: `useXxx.ts`, reactive state + methods |
 | Add an API route | `server/api/{domain}/` | File-based: `index.get.ts`, `[slug].ts` |
@@ -105,7 +105,7 @@ Node 24 (`.nvmrc`/engines), pnpm ≥11 (`packageManager: pnpm@11.8.0`).
 
 ### Frontend (`app/`)
 
-- **Pages** (29, listed above): public directory surfaces (`/venues`, `/categories` hub/detail + silo spokes/category×city through the `[cities].vue` dispatch route, `/country/**`), blog, dashboard + admin.
+- **Pages** (30, listed above): public directory surfaces (`/venues`, `/groups/[slug]` public franchise hubs, `/categories` hub/detail + silo spokes/category×city through the `[cities].vue` dispatch route, `/country/**`), blog, dashboard + admin.
 - **Middleware**: `auth.ts`, `admin.ts`, `redirect-category-slugs.global.ts` (legacy slug redirects).
 - **Layouts**: `default.vue`, `dashboard.vue`, `auth.vue`, `error.vue`.
 - **Composables** (13): `useAuth`, `useStripe`, `useAffiliate`, `useCitySearch`, `useVenueFilters`, `useMapLink`, `useCategoryRouteI18n`, `useLocaleSwitcher`, `usePasswordReset`, `useConfirmDialog`, `useDashboardAnimations`, `content-markdown`.
@@ -117,7 +117,7 @@ Layered: API routes → services → queries → schemas. Redis-backed Nitro sto
 ### Scraping pipeline
 
 - **Jobs** (`server/jobs/scrape-venues.ts`) orchestrate; `server/services/scraping/` hosts browser/parser/storage/state/rate-limit + `sources/` adapters.
-- Template ships **two reference adapters** (`masalledesport`, `fitnesspark` — multi-sport aggregators) as the pattern to copy; each instantiation adds its own.
+- Template ships **three reference adapters** — `masalledesport` (Playwright HTML), `fitnesspark` (server-rendered HTML), `osm-overpass` (JSON, `requiresBrowser: false` — the archetype to copy for govt datasets/OSM/Maps sources; registered but NOT selected in `config.scraping.sources`). Each instantiation adds its own source-specific adapters; an unselected adapter needs no `sources` DB row (`venue_sources.source_code` has no FK to `sources.code`).
 - Flow: scrape → `ingest.ts` → normalize + upsert `venueSources` → `matching.ts` (rules + geocoding + AI) → unmatched ⇒ `matchCandidates` (PENDING) → admin review at `/dashboard/admin/match-candidates`.
 - Scheduled tasks (nuxt.config.ts): venues multi-source re-scrape 03:00, category-content generation 04:00 (active locales — `directoryConfig.locales`), venue-website validation Sun 05:00, venue AI enrichment 06:00, geocoding catch-up 06:30.
 
@@ -130,6 +130,7 @@ Layered: API routes → services → queries → schemas. Redis-backed Nitro sto
 - **DB**: always `useDrizzle()`; import schemas from `~~/server/db/schemas`; slugs via SQL `slugify()`; JSONB for multilingual content; GIN trigram index on `venues.normalizedName`.
 - **Venue attributes / facets**: `venues.attributes` is an open `jsonb` (`Record<string, unknown>`, migration `20261028183838_military_shape`, no index — exact-match filtering on small datasets; add GIN if a niche scales). Keys are config-declared (`taxonomy.facets`): the venue page renders chips ONLY for declared keys (booleans when `true`, enums when the value is whitelisted), the `/venues` sidebar renders a control per `filterable` facet, and `GET /api/venues` accepts repeated `facet=key:value` params validated against the whitelist (`shared/facets.ts` — unknown key / non-filterable / off-whitelist value ⇒ 400, like any bad query param; keys and values are bound params, never JSONB paths). List + count share the WHERE clause, so pagination stays consistent. Scrapers merge into it via `mergeVenueAttributes` (`server/services/venues/ingest.ts`, applied at venue creation in `matching.ts`): INSERT sets the payload directly, an update must only FILL missing keys — never clobber owner-set values.
 - **Venue page public surfaces**: the detail page renders the venue's `formulas` ("Tarifs"/"Prices" — name + price via `Intl.NumberFormat` with `directoryConfig.billing.currency`, + `type` as the period line) and `equipments` (names as chips) — previously dashboard-managed only. Sections render only when the data exists.
+- **Public group pages**: `/groups/[slug]` lists every PUBLIC venue of one franchise (SEO hub for multi-site groups); a franchise is listed only when it has ≥1 venue with `statusCode = 'active'` — the same public-listing gate as `/venues`, no dedicated isPublic flag. The query returns public-safe columns only (ownerId never leaves the dashboard queries); `getVenueBySlug` includes the franchise (id/slug/name) so the venue page links to it; the sitemap emits `/groups/**` for franchises with ≥1 public venue.
 - **API response**: `{ data: T, meta?: { totalCount, page, pageSize, totalPages } }`.
 - **Auth**: `requireUserSession(event)` protected / `getUserSession(event)` optional; session plugin injects DB user + subscription.
 - **Validation**: `readValidatedBody` + Zod.

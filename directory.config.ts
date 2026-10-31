@@ -770,16 +770,38 @@ export const directoryConfig = {
   scraping: {
     // Active adapters — validated against sources/registry.ts at boot; the
     // instantiation contract test asserts coherence in the unit lane.
+    // "osm-overpass" is the registered JSON no-browser reference archetype —
+    // it stays unselected by default; enable it for a niche by uncommenting:
+    // sources: ["masalledesport", "fitnesspark", "osm-overpass"],
     sources: ["masalledesport", "fitnesspark"],
-    // JSON no-browser archetype (OSM Overpass) ships unselected — enable with:
-    // sources: [..., "osm-overpass"],
     // SAMPLE reject list (fitness-flavoured) — see the field JSDoc above.
     rejectNameKeywords: [
       "nails", "hair", "beauty", "salon", "coiffure", "ongle",
       "tattoo", "piercing",
       "pharmacy", "apotheken", "restaurant", "cafe", "bar ",
     ],
-    seedCities: ["Paris", "Berlin", "London", "Barcelona", "Rome", "Lisbon"],
+    // The 30 shipped banner cities (public/img/cities/<slug>.jpg), in
+    // server/db/data/major-cities-population.ts order — biggest city per
+    // supported market. MUST stay ⊆ the banner file set (unit contract test
+    // asserts every entry has its banner; localized display names live in
+    // i18n/locales/*.json `eu_city_names`).
+    seedCities: [
+      // France — top 10
+      "Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes",
+      "Montpellier", "Strasbourg", "Bordeaux", "Lille",
+      // Germany
+      "Berlin", "Hamburg", "Munich", "Cologne",
+      // United Kingdom
+      "London", "Birmingham", "Glasgow",
+      // Spain / Italy
+      "Madrid", "Barcelona", "Valencia", "Rome", "Milan", "Naples",
+      // Netherlands / Belgium / Austria / Switzerland
+      "Amsterdam", "Brussels", "Vienna", "Zurich",
+      // Portugal
+      "Lisbon", "Porto",
+      // Réunion
+      "Saint-Denis",
+    ],
   },
 } satisfies DirectoryConfig;
 

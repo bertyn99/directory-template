@@ -56,6 +56,7 @@ export const insertVenueSourceSchema = createInsertSchema(venueSources, {
   sourceCode: z.enum([
     "masalledesport",
     "fitnesspark",
+    "osm-overpass",
   ] as const satisfies readonly SourceCode[]),
   name: z.string().min(1).max(255).optional(),
   url: z.string().url().nullable().optional(),
