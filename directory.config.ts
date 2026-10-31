@@ -225,6 +225,19 @@ export interface TaxonomyCategory {
  * venues.attributes JSONB column. `key` is the JSONB key AND the i18n label
  * key fragment (`facet.<key>`, plus `facet.<key>.<value>` for enum values).
  */
+/**
+ * City-page URL pattern — the SEO hub-chain shape of an instantiation.
+ * - 'country-city-category': chained hubs — city hub at /<country>/<city>,
+ *   category × city at /<country>/<city>/<category> (e.g. /france/paris/spa —
+ *   country-first chain, deep silo). The legacy /country/** URLs 301 to it.
+ * - 'category-city': the pre-existing shape — city hub at
+ *   /country/<country>/<city>, category × city at /categories/<category>/<city>.
+ * All chain URLs are built through shared/city-chain.ts (single source); the
+ * redirect middleware flips with this flag. The filter-driven /venues search
+ * stays the complementary browse surface in both modes (not part of the chain).
+ */
+export type CityUrlPattern = "country-city-category" | "category-city";
+
 export interface FacetConfig {
   /** JSONB key of venues.attributes (also the i18n `facet.<key>` fragment). */
   key: string;
@@ -431,6 +444,14 @@ export interface DirectoryConfig {
   content: {
     siloSpokes: readonly string[];
     pillarPaths: Partial<Record<ConfigLocale, string>>;
+    /**
+     * City-page URL pattern — see {@link CityUrlPattern}. Sample value ships
+     * the country-first chain ('country-city-category', e.g. /france/paris/spa);
+     * flip to 'category-city' to restore the pre-existing /country/** +
+     * /categories/** shape. URL building (shared/city-chain.ts), the redirect
+     * middleware and the sitemap emission all derive from this value.
+     */
+    cityUrlPattern: CityUrlPattern;
   };
 
   /**
@@ -765,6 +786,10 @@ export const directoryConfig = {
       fr: "/blog/annuaire-niche-vs-marketplace",
       en: "/blog/niche-directory-vs-marketplace",
     },
+    // Chained country-first hubs (/france/paris + /france/paris/spa). Flip to
+    // 'category-city' to restore /country/{country}/{city} +
+    // /categories/{category}/{city} (legacy URLs keep 301ing either way).
+    cityUrlPattern: "country-city-category",
   },
 
   scraping: {

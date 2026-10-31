@@ -16,6 +16,66 @@ export const MAJOR_EU_CITY_ALIASES: Record<string, MajorEuCityName> = {
   Lisboa: "Lisbon",
 };
 
+/**
+ * Country slug (DB `countries.slug` — slugified country name) per canonical
+ * major city. Feeds the CROSS-COUNTRY city links in the
+ * 'country-city-category' chain pattern (sibling-city grids link
+ * /{country}/{city}/{category}, so each card needs its country). Same-country
+ * lists reuse the page's own country instead — country-scoped city lists may
+ * include non-major cities that are absent from this map.
+ *
+ * Names must cover every entry of scraping.seedCities (an instantiation
+ * replacing the seed list MUST extend this map; unknown names return null and
+ * callers fall back to the /categories/{category}/{city} URL, which the
+ * dispatcher middleware resolves + redirects server-side).
+ */
+export const MAJOR_EU_CITY_COUNTRY: Record<string, string> = {
+  // France
+  Paris: "france",
+  Marseille: "france",
+  Lyon: "france",
+  Toulouse: "france",
+  Nice: "france",
+  Nantes: "france",
+  Montpellier: "france",
+  Strasbourg: "france",
+  Bordeaux: "france",
+  Lille: "france",
+  // Germany
+  Berlin: "germany",
+  Hamburg: "germany",
+  Munich: "germany",
+  Cologne: "germany",
+  // United Kingdom
+  London: "united-kingdom",
+  Birmingham: "united-kingdom",
+  Glasgow: "united-kingdom",
+  // Spain / Italy
+  Madrid: "spain",
+  Barcelona: "spain",
+  Valencia: "spain",
+  Rome: "italy",
+  Milan: "italy",
+  Naples: "italy",
+  // Netherlands / Belgium / Austria / Switzerland
+  Amsterdam: "netherlands",
+  Brussels: "belgium",
+  Vienna: "austria",
+  Zurich: "switzerland",
+  // Portugal
+  Lisbon: "portugal",
+  Porto: "portugal",
+  // Réunion (own country row — "Reunion", not a French overseas code fold)
+  "Saint-Denis": "reunion",
+};
+
+/** Country slug for a canonical major-city name, alias-resolved; null when unknown. */
+export function majorEuCityCountrySlug(name: string): string | null {
+  const canonical = canonicalizeMajorEuCityName(name);
+  if (!canonical) return MAJOR_EU_CITY_COUNTRY[name] ?? null;
+  return MAJOR_EU_CITY_COUNTRY[canonical] ?? null;
+}
+
 export function majorEuCityLookupNames(): string[] {
   return [...MAJOR_EU_CITIES, ...Object.keys(MAJOR_EU_CITY_ALIASES)];
 }

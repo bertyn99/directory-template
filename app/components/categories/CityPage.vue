@@ -177,7 +177,7 @@ v-if="categoryGuidePath" :to="categoryGuidePath"
         <NuxtLink
           v-for="city in countryCityLinks"
           :key="city.name"
-          :to="localePath(`/categories/${categoryLocaleSlug}/${city.name.toLowerCase().replace(/\s+/g, '-')}`)"
+          :to="localePath(cityLinkTo(city.name, countrySlugParam))"
           class="group relative h-36 overflow-hidden rounded-sm border border-default transition-colors duration-150 hover:border-primary"
           :class="{ 'bg-secondary': !city.cover }"
         >
@@ -217,7 +217,7 @@ v-if="categoryGuidePath" :to="categoryGuidePath"
         <NuxtLink
           v-for="city in otherCityLinks"
           :key="city.name"
-          :to="localePath(`/categories/${categoryLocaleSlug}/${city.name.toLowerCase().replace(/\s+/g, '-')}`)"
+          :to="localePath(cityLinkTo(city.name))"
           class="group relative h-36 overflow-hidden rounded-sm border border-default transition-colors duration-150 hover:border-primary"
         >
           <NuxtImg
@@ -265,9 +265,16 @@ import {
 } from '~~/shared/activities'
 import {
   formatParisArrondissement,
+  majorEuCityCountrySlug,
   majorEuCityFromPublicSlug,
   majorEuCityImageSrc,
 } from '~~/shared/major-eu-cities'
+import {
+  CITY_URL_PATTERN,
+  categoryCityPath,
+  cityHubPath,
+  resolveChainRouteParams,
+} from '~~/shared/city-chain'
 import {
   resolveContentLocale,
   categoryGuidesCollectionName,
@@ -319,8 +326,14 @@ function absoluteUrl(path: string) {
   return new URL(path, String(siteConfig.url || directoryConfig.url)).href
 }
 
-const categorySlug = computed(() => route.params.category as string)
-const citySlug = computed(() => route.params.cities as string)
+// Two route shapes feed this component (see shared/city-chain.ts
+// resolveChainRouteParams): the /categories dispatcher names its params
+// category/cities, the country-first chain names them country/city/category.
+const chainParams = computed(() => resolveChainRouteParams(route.params))
+const categorySlug = computed(() => chainParams.value.categorySlug ?? '')
+const citySlug = computed(() => chainParams.value.citySlug ?? '')
+// Set only on the country-first chain route (/categories has no country).
+const countrySlugParam = computed(() => chainParams.value.countrySlug)
 
 const canonicalSlug = computed(() => {
   if (!categoryData.value) return categorySlug.value
@@ -447,11 +460,20 @@ const categoryDe = computed(() =>
 )
 
 // Canonicalize city URLs: zip variants (paris-75011) and aliases (lisboa)
-// 301 to the name slug, consolidating signals on one URL per category+city.
+// 301 to the name slug, consolidating signals on one URL per category+city —
+// in the shape of the ACTIVE cityUrlPattern.
 const canonicalCitySlug = otherCities.value?.canonicalCitySlug ?? null
 if (canonicalCitySlug && canonicalCitySlug !== citySlug.value) {
+  const canonicalTarget = countrySlugParam.value
+    ? categoryCityPath(
+        CITY_URL_PATTERN,
+        categoryLocaleSlug.value,
+        countrySlugParam.value,
+        canonicalCitySlug,
+      )
+    : `/categories/${categoryLocaleSlug.value}/${canonicalCitySlug}`
   await navigateTo(
-    localePath(`/categories/${categoryLocaleSlug.value}/${canonicalCitySlug}`),
+    localePath(canonicalTarget),
     { redirectCode: 301, replace: true },
   )
 }
@@ -489,6 +511,27 @@ const otherCityLinks = computed(() => {
     return nameSlug !== citySlug.value && nameSlug !== currentNameSlug
   })
 })
+
+/**
+ * Chain-aware URL for a sibling-city card (localePath applied at the call
+ * site). The country source differs per grid: same-country grids pass the
+ * page's own country (their query scopes by the current country); the
+ * cross-country eu grid passes none and resolves each major city via
+ * MAJOR_EU_CITY_COUNTRY instead. Unknown-to-the-map names fall back to the
+ * categories URL — the dispatcher middleware resolves the country and 301s
+ * server-side, so the link never dead-ends.
+ */
+function cityLinkTo(cityName: string, countrySlug?: string | null): string {
+  const slug = cityName.toLowerCase().replace(/\s+/g, '-')
+  if (CITY_URL_PATTERN === 'category-city') {
+    return `/categories/${categoryLocaleSlug.value}/${slug}`
+  }
+  const resolvedCountry = countrySlug ?? majorEuCityCountrySlug(cityName)
+  if (!resolvedCountry) {
+    return `/categories/${categoryLocaleSlug.value}/${slug}`
+  }
+  return categoryCityPath(CITY_URL_PATTERN, categoryLocaleSlug.value, resolvedCountry, slug)
+}
 
 const countryInfo = computed(() => otherCities.value?.country ?? null)
 
@@ -583,12 +626,25 @@ defineOgImage('NuxtSeo', {
   theme: '#1E293B',
 })
 
-const breadcrumbItems = computed(() => [
-  { label: t('nav.home'), to: localePath('/') },
-  { label: t('nav.categories.list'), to: localePath('/categories') },
-  { label: categoryData.value?.name ?? '', to: localePath(`/categories/${categoryLocaleSlug.value}`) },
-  { label: cityDisplayName.value },
-])
+// Breadcrumb mirrors the ACTIVE chain: country-first pattern →
+// Home / Countries / City (city hub URL) / Category (current); legacy
+// pattern keeps the categories hierarchy (Home / Categories / Category / City).
+const breadcrumbItems = computed(() => {
+  if (CITY_URL_PATTERN === 'country-city-category' && countrySlugParam.value) {
+    return [
+      { label: t('nav.home'), to: localePath('/') },
+      { label: t('nav.countries'), to: localePath('/country') },
+      { label: cityDisplayName.value, to: localePath(cityHubPath(countrySlugParam.value, citySlug.value)) },
+      { label: categoryData.value?.name ?? '' },
+    ]
+  }
+  return [
+    { label: t('nav.home'), to: localePath('/') },
+    { label: t('nav.categories.list'), to: localePath('/categories') },
+    { label: categoryData.value?.name ?? '', to: localePath(`/categories/${categoryLocaleSlug.value}`) },
+    { label: cityDisplayName.value },
+  ]
+})
 
 useSchemaOrg([
   defineBreadcrumb({

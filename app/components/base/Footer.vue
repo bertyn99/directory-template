@@ -65,6 +65,7 @@ v-model="selectedLocale" :items="localeItems" by="code" :search-input="false"
 <script setup lang="ts">
 import type { FooterColumn } from '@nuxt/ui'
 import { MOST_SEARCHED_CATEGORIES, getActivityLocaleSlug } from '~~/shared/activities'
+import { cityHubPath } from '~~/shared/city-chain'
 import { pillarPath, LOCALE_MENU_ITEMS, type LocaleMenuItem } from '~~/shared/nav'
 import { hasDirectoryGuide } from '~~/shared/silo'
 
@@ -74,7 +75,8 @@ interface FooterCategory {
     localeSlug: string
 }
 
-/** Two-segment city hubs (`/country/{country}/{city}`) — live 200s only, not `/country/paris`. */
+/** Featured city hubs — live 200s only (both chain patterns). URL built
+ * through cityHubPath so the shape flips with directoryConfig.content.cityUrlPattern. */
 const FOOTER_CITY_HUBS = [
     { name: 'Paris', countrySlug: 'france', citySlug: 'paris' },
     { name: 'Lyon', countrySlug: 'france', citySlug: 'lyon' },
@@ -124,7 +126,7 @@ const footerColumns = computed<FooterColumn[]>(() => {
 
     const cityChildren = FOOTER_CITY_HUBS.map(hub => ({
         label: cityLabel(hub.name),
-        to: localePath(`/country/${hub.countrySlug}/${hub.citySlug}`),
+        to: localePath(cityHubPath(hub.countrySlug, hub.citySlug)),
     }))
     cityChildren.push({ label: t('footerNav.allCities'), to: localePath('/country') })
 

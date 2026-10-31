@@ -841,7 +841,6 @@
     "seoKeywords": "venue {city}, gym {city}, fitness {city}, yoga {city}, spa {city}, venue directory {city}",
     "breadcrumbHome": "Home",
     "breadcrumbCountries": "Countries",
-    "breadcrumbCountry": "{country}",
     "comingSoon": "Coming soon"
   },
   "affiliate": {

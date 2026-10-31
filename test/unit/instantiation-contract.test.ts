@@ -22,6 +22,7 @@ import {
   missingRequiredKeys,
 } from "~~/shared/locale-parity";
 import { SHIPPED_LOCALES } from "~~/shared/locale-meta";
+import { CITY_URL_PATTERN } from "~~/shared/city-chain";
 import { majorEuCityImageSlug } from "~~/shared/major-eu-cities";
 import { SCRAPING_SOURCE_IDS } from "~~/server/services/scraping/sources/ids";
 
@@ -212,6 +213,15 @@ describe("instantiation contract — content", () => {
     for (const path of Object.values(directoryConfig.content.pillarPaths)) {
       expect(path.startsWith("/"), `pillar path "${path}" must be origin-relative`).toBe(true);
     }
+  });
+
+  it("keeps cityUrlPattern to one of the two supported chain shapes", () => {
+    expect(["country-city-category", "category-city"]).toContain(
+      directoryConfig.content.cityUrlPattern,
+    );
+    // shared/city-chain.ts must mirror the config exactly — it is the single
+    // URL builder the pages, middleware and sitemap derive from.
+    expect(CITY_URL_PATTERN).toBe(directoryConfig.content.cityUrlPattern);
   });
 });
 

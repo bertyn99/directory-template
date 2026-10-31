@@ -1,9 +1,8 @@
-<!-- pages/countries/europe.vue -->
 <template>
     <UContainer>
         <UBreadcrumb
             :links="[
-                { label: $t('nav.home'), to: localePath('/') }, { label: $t('nav.countries'), to: localePath('/countries/') }]"
+                { label: $t('nav.home'), to: localePath('/') }, { label: $t('nav.countries'), to: localePath('/country') }]"
             class="mb-8" />
 
         <div class="mt-6">

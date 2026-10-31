@@ -13,6 +13,10 @@ import {
 } from "~~/shared/activities";
 import { hreflangOf } from "~~/shared/locale-meta";
 import {
+  CITY_URL_PATTERN,
+  buildChainCategorySitemapAlternatives,
+} from "~~/shared/city-chain";
+import {
   majorEuCityFromPublicSlug,
   majorEuCityImageSlug,
 } from "~~/shared/major-eu-cities";
@@ -87,6 +91,24 @@ export default defineSitemapEventHandler(async (event) => {
 
     const defaultSlug =
       getActivityLocaleSlug(def.slug, directoryConfig.defaultLocale) ?? def.slug;
+
+    // Country-first chain: /{country}/{city}/{category-default-slug} with
+    // per-locale chain hreflang alternatives. Needs the country slug from the
+    // combinations query (cities ⋈ countries).
+    if (CITY_URL_PATTERN === "country-city-category" && pair.country_slug) {
+      return [
+        asSitemapUrl({
+          loc: `${pair.country_slug}/${citySlug}/${defaultSlug}`,
+          alternatives: buildChainCategorySitemapAlternatives(
+            def.slug,
+            pair.country_slug,
+            citySlug,
+          ),
+        }),
+      ];
+    }
+
+    // Legacy categories shape (category-city pattern).
     return [
       asSitemapUrl({
         loc: `categories/${defaultSlug}/${citySlug}`,
@@ -97,7 +119,12 @@ export default defineSitemapEventHandler(async (event) => {
 
   const cityHubSitemap = cityHubSlugs.map((p) =>
     asSitemapUrl({
-      loc: `country/${p.countrySlug}/${p.cityNameSlug}`,
+      // Country-first chain: bare /{country}/{city}; legacy: /country/**.
+      // _i18nTransform adds the locale prefixes (slugs identical per locale).
+      loc:
+        CITY_URL_PATTERN === "country-city-category"
+          ? `${p.countrySlug}/${p.cityNameSlug}`
+          : `country/${p.countrySlug}/${p.cityNameSlug}`,
       _i18nTransform: true,
     }),
   );

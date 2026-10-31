@@ -123,22 +123,30 @@ export async function setAddressGeocode(
 
 /**
  * Resolve a public city slug (`paris`, `paris-75011`, `lisboa`) to its
- * country (ISO code + DB name) and canonical city name. Used to scope
- * "biggest cities of the current country" sections.
+ * country (ISO code + DB name + DB slug) and canonical city name. Used to
+ * scope "biggest cities of the current country" sections and by
+ * GET /api/cities/resolve to redirect the /categories category×city URLs to
+ * the country-first chain shape.
  */
 export async function getCountryByCitySlug(
   citySlug: string,
-): Promise<{ code: string; name: string; cityName: string } | null> {
+): Promise<{
+  code: string;
+  name: string;
+  slug: string;
+  cityName: string;
+} | null> {
   const rows = await useDrizzle()
     .select({
       code: countries.code,
       name: countries.name,
+      slug: countries.slug,
       cityName: cities.name,
     })
     .from(cities)
     .innerJoin(countries, eq(cities.countryId, countries.id))
     .where(matchCityPublicSlug(citySlug))
-    .groupBy(countries.code, countries.name, cities.name)
+    .groupBy(countries.code, countries.name, countries.slug, cities.name)
     .limit(1);
 
   return rows[0] ?? null;

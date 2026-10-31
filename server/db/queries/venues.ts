@@ -651,10 +651,12 @@ export async function getCategoryCityCombinations() {
   const result = await useDrizzle().execute(sql`
     SELECT DISTINCT
       act.slug AS activity_slug,
-      slugify(c.name) AS city_slug
+      slugify(c.name) AS city_slug,
+      co.slug AS country_slug
     FROM venues cl
     JOIN addresses a ON a.id = cl.address_id
     JOIN cities c ON c.id = a.city_id
+    JOIN countries co ON co.id = c.country_id
     JOIN venue_activities ca ON ca.venue_id = cl.id
     JOIN activities act ON act.id = ca.activity_id
     WHERE cl.status = 'active'
@@ -662,5 +664,11 @@ export async function getCategoryCityCombinations() {
       AND act.slug IS NOT NULL
     ORDER BY 1, 2
   `);
-  return (result as { rows: Array<{ activity_slug: string; city_slug: string }> }).rows;
+  return (result as {
+    rows: Array<{
+      activity_slug: string;
+      city_slug: string;
+      country_slug: string;
+    }>;
+  }).rows;
 }

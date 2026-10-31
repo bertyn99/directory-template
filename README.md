@@ -10,7 +10,7 @@ Stack: **Nuxt 4 · Nuxt UI v4 · Drizzle ORM (PostgreSQL) · nuxt-auth-utils · 
 
 | Area | What ships |
 |---|---|
-| Public site | Home, `/venues` + detail, `/groups/**` (public franchise hubs), `/categories` hub/detail/category×city, `/country/**` browsing, blog, silo guide spokes, legal/contact |
+| Public site | Home, `/venues` + detail, `/groups/**` (public franchise hubs), `/categories` hub/detail/category×city, city chain `/{country}/{city}[/{category}]` (config-shape: `content.cityUrlPattern` — legacy `/country/**` URLs 301), blog, silo guide spokes, legal/contact |
 | Taxonomy | `venueCategories` DB table (venue FK) + an editorial activity catalog driving `/categories` — samples: fitness, yoga, spa. Per-venue structured attributes (`venues.attributes` JSONB + `taxonomy.facets`): config-declared boolean/enum facets rendered as detail-page chips, filterable via `?facet=key:value`, with public `formulas` (prices) + `equipments` sections on the venue page |
 | Data pipeline | Scraping framework (browser/server-HTML/JSON adapters, rate-limit, state) + 3 reference adapters (masalledesport, fitnesspark, osm-overpass), ingestion → dedup/matching (rules + geocoding + AI) → admin review queue for unmatched candidates |
 | Ops | Nitro scheduled tasks (re-scrape, content generation, venue validation, AI enrichment, geocoding), Redis-backed caching/rate-limiting, scraper alerting |
