@@ -29,8 +29,10 @@
         <p class="text-muted mb-6">
           {{ t('cityHub.emptyDescription', { city: hubData.data.city.name }) }}
         </p>
-        <UButton :to="localePath('/dashboard/venues')" color="primary" class="rounded-sm">
-          {{ t('cityHub.emptyCta') }}
+        <!-- Visitor path: the /venues filter search (the complementary browse
+             surface) — never the dashboard auth wall. -->
+        <UButton :to="localePath(`/venues?city=${cityNameSlug}`)" color="primary" class="rounded-sm">
+          {{ t('cityHub.emptySearchCta') }}
         </UButton>
       </section>
     </template>
@@ -151,6 +153,7 @@ import {
   getActivityDisplayNameForRow,
   getActivityLocaleSlug,
 } from '~~/shared/activities'
+import { CONTENT_LOCALES } from '~~/shared/silo'
 import {
   CITY_URL_PATTERN,
   categoryCityPath,
@@ -292,6 +295,9 @@ useSeoMeta({
     count: hubData.value?.data.totalVenues,
   }),
   keywords: () => t('cityHub.seoKeywords', { city: hubData.value?.data.city.name }),
+  // Thin hubs (zero venues) stay out of the index — same rule as the
+  // category × city page.
+  robots: () => ((hubData.value?.data.totalVenues ?? 0) > 0 ? 'index, follow' : 'noindex, nofollow'),
 })
 
 defineOgImage('NuxtSeo')
@@ -319,9 +325,10 @@ const setI18nParams = useSetI18nParams()
 // Register per-locale i18n params so hreflang links render on SSR (strictSeo).
 // Must be a per-locale map: { fr: {...}, en: {...}, ... } — flat objects break hreflang.
 // Param names country/city match BOTH chain routes; slugs are identical
-// across locales.
+// across locales. Active locales only (directoryConfig.locales) — an
+// inactive locale would emit hreflang to an unrouted URL.
 const cityParams = () => Object.fromEntries(
-  ['fr', 'en', 'de', 'es', 'it', 'pt'].map(loc => [loc, {
+  CONTENT_LOCALES.map(loc => [loc, {
     country: countrySlug.value,
     city: cityNameSlug.value,
   }]),

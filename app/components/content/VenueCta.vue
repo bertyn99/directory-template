@@ -27,6 +27,8 @@ const localeSlug = computed(() =>
 interface CityCard {
   name: string
   venueCount: number
+  /** Country slug (cities API) — enables the country-first chain URL. */
+  countrySlug?: string | null
 }
 
 const { data: venueMeta } = await useAsyncData(
@@ -68,8 +70,8 @@ function cityLabel(name: string) {
   return te(key) ? t(key) : name
 }
 
-function cityPath(name: string) {
-  return categoryCityPath(localePath, localeSlug.value, name)
+function cityPath(city: CityCard) {
+  return categoryCityCardPath(localePath, localeSlug.value, city.name, city.countrySlug)
 }
 </script>
 
@@ -99,7 +101,7 @@ function cityPath(name: string) {
     >
       <li v-for="city in venueMeta.cities" :key="city.name">
         <NuxtLink
-          :to="cityPath(city.name)"
+          :to="cityPath(city)"
           class="text-sm font-medium text-primary transition-colors duration-150 hover:text-primary/80"
         >
           {{ t('guide.venueCtaCity', { category: categoryName, city: cityLabel(city.name) }) }}

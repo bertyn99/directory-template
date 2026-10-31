@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { directoryConfig } from "~~/directory.config";
 import {
   ACTIVITY_ALIAS_ONLY_SLUGS,
   activityMatchesSearch,
@@ -121,14 +122,17 @@ describe("activity catalog (slug identity)", () => {
     ).toBe("/de/categories/spa/berlin");
   });
 
-  it("builds i18n route params per locale", () => {
-    expect(getCategoryI18nParams("yoga")).toEqual({
-      fr: { categories: "yoga" },
-      en: { categories: "yoga" },
-      de: { categories: "yoga" },
-      es: { categories: "yoga" },
-      it: { categories: "yoga" },
-      pt: { categories: "yoga" },
-    });
+  it("builds i18n route params per ACTIVE locale", () => {
+    // Narrowed to directoryConfig.locales (Wave J): the params feed
+    // setI18nParams → hreflang, and an inactive locale would emit alternates
+    // to unrouted URLs. The sample activates all six shipped locales, so the
+    // result still covers fr/en/de/es/it/pt here.
+    const expected = Object.fromEntries(
+      directoryConfig.locales.map((loc) => [loc, { categories: "yoga" }]),
+    );
+    expect(getCategoryI18nParams("yoga")).toEqual(expected);
+    // The taxonomy slug COVERAGE (ACTIVITY_LOCALES) is a superset of the
+    // active set by construction — the builder must never emit more.
+    expect(Object.keys(getCategoryI18nParams("yoga")).length).toBeLessThanOrEqual(6);
   });
 });

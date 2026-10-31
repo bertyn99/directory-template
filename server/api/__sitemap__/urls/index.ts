@@ -94,8 +94,12 @@ export default defineSitemapEventHandler(async (event) => {
 
     // Country-first chain: /{country}/{city}/{category-default-slug} with
     // per-locale chain hreflang alternatives. Needs the country slug from the
-    // combinations query (cities ⋈ countries).
-    if (CITY_URL_PATTERN === "country-city-category" && pair.country_slug) {
+    // combinations query (cities ⋈ countries) — a pair that fails to resolve
+    // its country is SKIPPED, never emitted in the legacy shape (that URL
+    // 301s through the dispatcher middleware; a sitemap must not list
+    // redirecting URLs).
+    if (CITY_URL_PATTERN === "country-city-category") {
+      if (!pair.country_slug) return [];
       return [
         asSitemapUrl({
           loc: `${pair.country_slug}/${citySlug}/${defaultSlug}`,

@@ -117,11 +117,16 @@ const socialLinks = computed(() => {
     return Object.entries(raw as Record<string, unknown>)
         .filter((entry): entry is [string, string] =>
             typeof entry[1] === 'string' && entry[1].trim().length > 0)
+        // Scheme-safe href (app/utils/urls.ts): a `javascript:`/`data:` value
+        // stored in the franchise socialMedia JSONB is dropped, not rendered
+        // (audit H1 — the venue page already routed links through ensureUrl).
         .map(([platform, href]) => ({
             platform,
-            href,
+            href: ensureUrl(href),
             icon: SOCIAL_ICONS[platform.toLowerCase()] ?? 'i-lucide-external-link',
         }))
+        .filter((link): link is { platform: string; href: string; icon: string } =>
+            typeof link.href === 'string')
 })
 
 const breadcrumbLinks = computed(() => [

@@ -343,7 +343,10 @@ export function getCategoryI18nParams(
   if (!activity) return {};
 
   const params: Record<string, { categories: string }> = {};
-  for (const loc of ACTIVITY_LOCALES) {
+  // ACTIVE locales only (directoryConfig.locales) — setI18nParams feeds
+  // hreflang, and an inactive locale would emit alternates to unrouted URLs
+  // (ACTIVITY_LOCALES is the taxonomy slug COVERAGE, not the activation set).
+  for (const loc of directoryConfig.locales) {
     params[loc] = {
       categories: getActivityLocaleSlug(activity.slug, loc) ?? activity.slug,
     };
@@ -406,7 +409,8 @@ export function buildCategorySitemapAlternatives(
   citySlug?: string,
   siteUrl: string = directoryConfig.url,
 ): Array<{ hreflang: string; href: string }> {
-  return ACTIVITY_LOCALES.map((loc) => ({
+  // ACTIVE locales only — mirrors buildChainCategorySitemapAlternatives.
+  return directoryConfig.locales.map((loc) => ({
     hreflang: hreflangOf(loc) ?? loc,
     href: `${siteUrl}${buildCategoryPath(loc, canonicalSlug, citySlug)}`,
   }));

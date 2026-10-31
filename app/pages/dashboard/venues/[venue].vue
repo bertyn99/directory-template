@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { directoryConfig } from '~~/directory.config'
 import { localizedCopy } from '~~/shared/affiliates'
+import { CONTENT_LOCALES } from '~~/shared/silo'
 
 definePageMeta({
   layout: 'dashboard',
@@ -43,7 +44,9 @@ const infoForm = reactive({
   socialMedia: { facebook: '', twitter: '', instagram: '' },
 })
 
-const locales = ['fr', 'en', 'de', 'es', 'it', 'pt'] as const
+// Description locales follow the ACTIVE locale set (directoryConfig.locales
+// via CONTENT_LOCALES) — never a hardcoded superset.
+const locales = CONTENT_LOCALES
 const activeDescTab = ref(0)
 
 function initInfoForm() {

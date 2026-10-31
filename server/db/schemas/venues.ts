@@ -198,13 +198,22 @@ export const venueEquipments = pgTable(
 
 // Relations will be defined in index.ts to avoid circular dependencies
 
+/** http(s)-only URL — `.url()` alone is a bare `new URL()` parse and also
+ *  accepts `javascript:`/`data:` payloads (audit H1). */
+const httpUrl = z
+  .string()
+  .url()
+  .refine((value) => /^https?:\/\//i.test(value), {
+    message: "Must be an http(s) URL",
+  });
+
 export const insertVenueSchema = createInsertSchema(venues, {
   name: z.string().min(2),
   tel: z.string().min(8),
-  website: z.string().url().optional(),
-  // Same URL convention as `website` (http(s) enforced by .url()); forms send
-  // undefined (absent key) when the field is left empty.
-  bookingUrl: z.string().url().optional(),
+  website: httpUrl.optional(),
+  // Same URL convention as `website`; forms send undefined (absent key) when
+  // the field is left empty. http(s)-only — see httpUrl above.
+  bookingUrl: httpUrl.optional(),
   bookingPartner: z.string().optional(),
 });
 

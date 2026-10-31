@@ -301,11 +301,22 @@ export async function searchVenues(params: SearchVenuesInput): Promise<SearchVen
 }
 
 /**
- * Get a single venue by slug with full details
+ * Get a single venue by slug with full details — PUBLIC page surface only:
+ * gated on statusCode='active' (the same public-listing gate as /venues and
+ * /groups) and stripped of system columns (trustRank, isManuallyEdited,
+ * subscription…) that must never leave the server (audit M1).
  */
 export async function getVenueBySlug(slug: string) {
   const result = await useDrizzle().query.venues.findFirst({
-    where: { slug },
+    where: { slug, statusCode: "active" },
+    columns: {
+      // Internal/system columns — never public.
+      trustRank: false,
+      isManuallyEdited: false,
+      normalizedName: false,
+      canonicalPhone: false,
+      subscription: false,
+    },
     with: {
       address: {
         with: {

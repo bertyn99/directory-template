@@ -1,4 +1,5 @@
 import { useDrizzle } from "#imports";
+import { createHash } from "node:crypto";
 import { venueSources, insertVenueSourceSchema } from "~~/server/db/schemas";
 import { eq } from "drizzle-orm";
 import { directoryConfig } from "~~/directory.config";
@@ -49,6 +50,52 @@ function extractSourceVenueId(place: PlaceData): string | null {
   }
 
   return null;
+}
+
+/**
+ * Deterministic synthetic source-venue id for id-less places (audit #8):
+ * sha1 over the stable identity fields. Without it, a place with no
+ * extractable id re-INSERTS a fresh venue_sources row on every scrape run
+ * (the url fallback dedupes only when the adapter emits a usable url).
+ * 24 hex chars — well under the varchar(255) column.
+ */
+function syntheticSourceVenueId(place: PlaceData): string | null {
+  const address = place.address as
+    | { street?: unknown; city?: unknown; zip?: unknown }
+    | undefined;
+  const identity = [
+    place.name,
+    address?.street,
+    address?.city,
+    address?.zip,
+    place.website,
+  ]
+    .map((value) => (typeof value === "string" ? value.trim().toLowerCase() : ""))
+    .join("|");
+  if (!identity.replace(/\|/g, "")) return null;
+  return `syn-${createHash("sha1").update(identity).digest("hex").slice(0, 24)}`;
+}
+
+/**
+ * Oversized raw payloads (audit #15): venue_sources.raw stores the whole
+ * PlaceData, and adapter payloads (OSM elements arrays, scraped HTML) are
+ * unbounded. Above the cap, keep ONLY the fields the pipeline re-reads from
+ * stored raw — raw.id / raw.slug (extractSourceVenueId), raw.attributes
+ * (attributesFromSourceRaw), raw.activities (deriveActivitySlugsFromSource).
+ */
+const MAX_RAW_JSON_CHARS = 256 * 1024;
+
+function boundedSourceRaw(place: PlaceData): unknown {
+  if (JSON.stringify(place).length <= MAX_RAW_JSON_CHARS) return place;
+  const raw = place.raw as Record<string, unknown> | undefined;
+  const activities = (place as Record<string, unknown>).activities;
+  return {
+    id: raw && typeof raw.id === "string" ? raw.id : undefined,
+    slug: raw && typeof raw.slug === "string" ? raw.slug : undefined,
+    attributes: place.attributes,
+    activities: Array.isArray(activities) ? activities : undefined,
+    _truncated: true,
+  };
 }
 
 /**
@@ -202,8 +249,9 @@ export async function ingestVenueSources(
         addressId = await upsertCityAndAddress(normalizedAddress);
       }
 
-      // Extract source venue ID
-      const sourceVenueId = extractSourceVenueId(place);
+      // Extract source venue ID — id-less places get a deterministic
+      // synthetic id so re-runs UPDATE instead of re-inserting (audit #8).
+      const sourceVenueId = extractSourceVenueId(place) ?? syntheticSourceVenueId(place);
 
       // Build venue_sources payload
       const venueSourceData = {
@@ -218,7 +266,7 @@ export async function ingestVenueSources(
         website: normalizeWebsite(place.website),
         tel: normalizePhone(place.tel),
         addressId,
-        raw: place as unknown,
+        raw: boundedSourceRaw(place),
       };
 
       // Validate with Zod

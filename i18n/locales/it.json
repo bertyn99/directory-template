@@ -529,5 +529,31 @@
     "venueCount": "{count} sedi",
     "allVenuesBy": "Tutte le sedi di {name}",
     "seoTitle": "{name} — {count} sedi"
+  },
+  "cityHub": {
+    "title": "Venue a {city} | Directory Template",
+    "description": "Trova i migliori venue a {city}, {country}. {count} venue elencati con recensioni e informazioni.",
+    "h1": "Venue a {city}",
+    "venueCount": "{count} venue elencati",
+    "statsVenues": "{count} venue",
+    "statsActivities": "{count} categorie",
+    "statsTopActivity": "Top: {activity}",
+    "introText": "Scopri i migliori venue a {city}, {country}. Fitness, yoga, spa — trova lo spazio ideale per la tua attività.",
+    "activitiesTitle": "Categorie a {city}",
+    "activityVenueCount": "{count} venue",
+    "topVenuesTitle": "Migliori venue a {city}",
+    "ctaTitle": "Hai un venue?",
+    "ctaDescription": "Aggiungi il tuo venue a {city} gratuitamente.",
+    "ctaButton": "Aggiungi il mio venue",
+    "nearbyCitiesTitle": "Città vicine",
+    "nearbyCityVenues": "{count} venue",
+    "emptyTitle": "Nessun venue elencato a {city}",
+    "emptyDescription": "Conosci un venue a {city}? Aggiungilo gratuitamente.",
+    "emptyCta": "Aggiungi un venue",
+    "emptySearchCta": "Cerca un venue",
+    "seoKeywords": "venue {city}, palestra {city}, fitness {city}, yoga {city}, spa {city}, directory di venue {city}",
+    "breadcrumbHome": "Home",
+    "breadcrumbCountries": "Paesi",
+    "comingSoon": "Prossimamente"
   }
 }

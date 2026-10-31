@@ -88,7 +88,6 @@
     "@nuxt/image": "^2.2.0",
     "@nuxt/test-utils": "^4.3.3",
     "@nuxtjs/i18n": "^10.6.0",
-    "@nuxtjs/seo": "5.3.12",
     "@playwright/test": "^1.48.0",
     "@takumi-rs/core": "^1.8.1",
     "@types/pg": "^8.11.10",

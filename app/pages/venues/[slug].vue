@@ -272,12 +272,8 @@ const { t, te, locale } = useI18n();
 const localePath = useLocalePath()
 const requestUrl = useRequestURL()
 
-/** Prepends https:// to URLs missing a protocol so browsers don't treat them as relative paths. */
-function ensureUrl(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
-  if (/^https?:\/\//.test(url)) return url;
-  return `https://${url}`;
-}
+// ensureUrl (app/utils/urls.ts, auto-imported) — shared safe-href helper:
+// https-prepend + scheme allowlist (javascript:/data: ⇒ undefined).
 
 const venueSlug = computed(() => route.params.slug ?? '');
 const { data: venue, error: venueError } = await useAsyncData(`venue-${venueSlug.value}`, () => $fetch(`/api/venues/${venueSlug.value}`), {
@@ -437,6 +433,10 @@ const openingHoursSpec = computed(() => {
 // promises the practical data on the page (hours/phone/price) so the snippet
 // can intercept brand queries against the venue's own site (YGG-196). Brand
 // fallbacks come from directoryConfig.name (never a hardcoded brand).
+// Site-config origin (directoryConfig.url via nuxt site config) — stable
+// behind proxies; the request origin drifts when a host alias reaches the
+// app (www/apex, preview domains) and would emit wrong absolute URLs.
+const siteUrl = String(useSiteConfig().url || directoryConfig.url)
 useSeoMeta({
   title: () => venue.value ? `${venueName.value} — ${t('venues.seoSuffix')}` : directoryConfig.name,
   description: () => {
@@ -449,7 +449,7 @@ useSeoMeta({
     return intro ? intro.substring(0, 160).replace(/<br>/g, ' ') : `${venueName.value} - Find venues on ${directoryConfig.name}`
   },
   ogImage: () => venue.value?.searchPicture || '/img/og-default.jpg',
-  ogUrl: () => `${requestUrl.origin}${requestUrl.pathname}`,
+  ogUrl: () => `${siteUrl}${requestUrl.pathname}`,
   twitterCard: 'summary_large_image',
 })
 
@@ -457,8 +457,8 @@ useSeoMeta({
 useSchemaOrg([
   defineBreadcrumb({
     itemListElement: [
-      { name: 'Home', item: '/' },
-      { name: 'Venues', item: '/venues' },
+      { name: () => t('nav.home'), item: '/' },
+      { name: () => t('nav.venues'), item: '/venues' },
       { name: () => venue.value?.name ?? '' }
     ]
   }),
@@ -466,7 +466,7 @@ useSchemaOrg([
     ? defineLocalBusiness({
         name: venueName.value,
         telephone: venue.value.tel || undefined,
-        url: () => `${requestUrl.origin}${requestUrl.pathname}`,
+        url: () => `${siteUrl}${requestUrl.pathname}`,
         image: venue.value.searchPicture || undefined,
         address: venue.value.address
           ? {

@@ -838,6 +838,7 @@
     "emptyTitle": "Aucun venue référencé à {city}",
     "emptyDescription": "Connaissez-vous un venue à {city} ? Ajoutez-le gratuitement.",
     "emptyCta": "Ajouter un venue",
+    "emptySearchCta": "Rechercher un venue",
     "seoKeywords": "venue {city}, salle de sport {city}, fitness {city}, yoga {city}, spa {city}, annuaire venues {city}",
     "breadcrumbHome": "Accueil",
     "breadcrumbCountries": "Pays",

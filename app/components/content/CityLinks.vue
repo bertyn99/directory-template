@@ -28,6 +28,8 @@ interface CityCard {
   name: string
   venueCount: number
   cover?: string | null
+  /** Country slug (cities API) — enables the country-first chain URL. */
+  countrySlug?: string | null
 }
 
 const { data: cities } = await useAsyncData(
@@ -61,8 +63,8 @@ function cityLabel(name: string) {
   return te(key) ? t(key) : name
 }
 
-function cityPath(name: string) {
-  return categoryCityPath(localePath, localeSlug.value, name)
+function cityPath(city: CityCard) {
+  return categoryCityCardPath(localePath, localeSlug.value, city.name, city.countrySlug)
 }
 
 function cityImage(city: CityCard) {
@@ -78,7 +80,7 @@ function cityImage(city: CityCard) {
       <NuxtLink
         v-for="city in cities"
         :key="city.name"
-        :to="cityPath(city.name)"
+        :to="cityPath(city)"
         class="group relative h-36 overflow-hidden rounded-sm border border-default transition-colors duration-150 hover:border-primary"
       >
         <NuxtImg

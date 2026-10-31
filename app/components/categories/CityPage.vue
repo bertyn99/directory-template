@@ -300,7 +300,7 @@ interface MajorCityCard {
 
 interface CountryCitiesPayload {
   eu: MajorCityCard[]
-  country: { code: string; cities: MajorCityCard[] } | null
+  country: { code: string; slug: string; cities: MajorCityCard[] } | null
   /** Canonical name slug for the requested city (zip/alias variants 301 to it). */
   canonicalCitySlug?: string | null
 }
@@ -461,17 +461,28 @@ const categoryDe = computed(() =>
 
 // Canonicalize city URLs: zip variants (paris-75011) and aliases (lisboa)
 // 301 to the name slug, consolidating signals on one URL per category+city —
-// in the shape of the ACTIVE cityUrlPattern.
+// in the shape of the ACTIVE cityUrlPattern. On the chain route the
+// country↔city pair is ALSO validated: /spain/paris/spa (real country, real
+// city, wrong pair) 301s to the city's true country instead of 200-ing as a
+// self-canonical duplicate of /france/paris/spa.
 const canonicalCitySlug = otherCities.value?.canonicalCitySlug ?? null
-if (canonicalCitySlug && canonicalCitySlug !== citySlug.value) {
-  const canonicalTarget = countrySlugParam.value
-    ? categoryCityPath(
-        CITY_URL_PATTERN,
-        categoryLocaleSlug.value,
-        countrySlugParam.value,
-        canonicalCitySlug,
-      )
-    : `/categories/${categoryLocaleSlug.value}/${canonicalCitySlug}`
+const canonicalCountrySlug = otherCities.value?.country?.slug ?? null
+const cityNeedsCanonical = canonicalCitySlug !== null && canonicalCitySlug !== citySlug.value
+const countryMismatch = Boolean(
+  countrySlugParam.value && canonicalCountrySlug && canonicalCountrySlug !== countrySlugParam.value,
+)
+if (cityNeedsCanonical || countryMismatch) {
+  const targetCitySlug = canonicalCitySlug ?? citySlug.value
+  const targetCountrySlug = canonicalCountrySlug ?? countrySlugParam.value
+  const canonicalTarget =
+    countrySlugParam.value && targetCountrySlug
+      ? categoryCityPath(
+          CITY_URL_PATTERN,
+          categoryLocaleSlug.value,
+          targetCountrySlug,
+          targetCitySlug,
+        )
+      : `/categories/${categoryLocaleSlug.value}/${targetCitySlug}`
   await navigateTo(
     localePath(canonicalTarget),
     { redirectCode: 301, replace: true },

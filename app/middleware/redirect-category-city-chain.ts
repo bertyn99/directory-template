@@ -2,6 +2,7 @@ import { isSiloSpokeType } from "~~/shared/silo";
 import {
   CITY_URL_PATTERN,
   categoryCityRedirectPath,
+  splitLocalePrefix,
 } from "~~/shared/city-chain";
 import {
   findActivityDefinition,
@@ -82,8 +83,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const categoryLocaleSlug =
     getActivityLocaleSlug(def.slug, useNuxtApp().$i18n.locale.value) ??
     def.slug;
+  // Preserve the locale prefix — /en/categories/spa/paris must 301 to
+  // /en/france/paris/spa, never to the default-locale URL (a cross-language
+  // redirect would chain a second 301 and leak the fr URL to en crawlers).
+  const { prefix } = splitLocalePrefix(to.path);
   return navigateTo(
-    `/${resolved.data.country.slug}/${citySlug}/${categoryLocaleSlug}`,
+    `${prefix}/${resolved.data.country.slug}/${citySlug}/${categoryLocaleSlug}`,
     { redirectCode: 301, replace: true },
   );
 });

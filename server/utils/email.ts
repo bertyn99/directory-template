@@ -85,7 +85,9 @@ export async function trackNotificationEvent(event: H3Event, eventData: PlunkEve
     });
 
     if (import.meta.dev) {
-      console.log("Notification event tracked:", eventData.event, "for", eventData.email);
+      // No recipient address in logs (PII) — the event name is enough to
+      // follow the flow in dev (audit L4).
+      console.log("Notification event tracked:", eventData.event);
     }
   } catch (error) {
     console.error("Failed to track Notification event:", error);
@@ -113,9 +115,9 @@ export async function sendEmail(event: H3Event, options: SendEmailOptions) {
   const plunk = getPlunkClient(event);
 
   if (!plunk) {
+    // No recipient address in logs (PII) — template name is enough (audit L4).
     console.warn("Plunk client not available. Email will not be sent.", {
       templateName: options.templateName,
-      to: options.to,
     });
     return { success: false, error: "Email service unavailable" };
   }
@@ -135,8 +137,16 @@ export async function sendEmail(event: H3Event, options: SendEmailOptions) {
 
     // Prepare recipients
     const recipients = Array.isArray(options.to) ? options.to : [options.to];
-    const fromEmail =
-      options.from || (config.email?.from as string | undefined) || "noreply@kosmonotes.com";
+    // Sender comes from env/config (PLUNK_DEFAULT_FROM) or the caller — there
+    // is no hardcoded fallback domain (audit L4: a template must not ship
+    // another product's noreply@ address).
+    const fromEmail = options.from || (config.email?.from as string | undefined);
+    if (!fromEmail) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Email sender not configured (PLUNK_DEFAULT_FROM)",
+      });
+    }
 
     // Send via Plunk
 

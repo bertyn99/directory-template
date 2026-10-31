@@ -2,6 +2,7 @@
 
 import type { FormSubmitEvent } from '#ui/types'
 import { z } from 'zod'
+import { CONTENT_LOCALES } from '~~/shared/silo'
 
 definePageMeta({
     layout: 'dashboard',
@@ -15,7 +16,7 @@ const mode = ref<'limit' | 'ids'>('limit')
 const idsText = ref('')
 const limit = ref(50)
 const force = ref(false)
-const locales = ref(['fr', 'en'])
+const locales = ref([...CONTENT_LOCALES])
 
 const schema = z.object({
     mode: z.enum(['limit', 'ids']),

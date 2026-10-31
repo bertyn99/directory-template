@@ -42,9 +42,16 @@ function hostMatches(host: string, configuredHosts: readonly string[]): boolean 
   });
 }
 
+/**
+ * Scheme-safe href (app/utils/urls.ts ensureUrl): https-prepend, and
+ * javascript:/data: payloads ⇒ undefined — a dangerous booking_url renders
+ * NOTHING instead of an XSS link (audit H1; zod .url() alone allows it).
+ */
+const safeBookingUrl = computed(() => ensureUrl(props.bookingUrl));
+
 const resolvedPartner = computed<BookingPartnerConfig | undefined>(() => {
   const registry = props.partners ?? directoryConfig.booking.partners;
-  if (!props.bookingUrl || registry.length === 0) {
+  if (!safeBookingUrl.value || registry.length === 0) {
     return undefined;
   }
   if (props.bookingPartner) {
@@ -55,7 +62,7 @@ const resolvedPartner = computed<BookingPartnerConfig | undefined>(() => {
   }
   let host: string;
   try {
-    host = new URL(props.bookingUrl).hostname;
+    host = new URL(safeBookingUrl.value).hostname;
   } catch {
     // Unparseable URL — treat as unmatched (plain outbound).
     return undefined;
@@ -79,9 +86,9 @@ const label = computed(() =>
 </script>
 
 <template>
-  <div v-if="bookingUrl" class="flex flex-col items-start gap-1">
+  <div v-if="safeBookingUrl" class="flex flex-col items-start gap-1">
     <UButton
-      :href="bookingUrl"
+      :href="safeBookingUrl"
       target="_blank"
       :rel="rel"
       color="primary"

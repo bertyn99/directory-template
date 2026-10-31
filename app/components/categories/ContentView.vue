@@ -32,6 +32,20 @@ if (!props.directory && !definition.value) {
   throw createError({ statusCode: 404, statusMessage: 'Category not found' })
 }
 
+// Alias / wrong-locale category slugs (boxe-thai → boxing) 301 to the
+// canonical spoke URL — the same signal consolidation useCategoryRouteI18n
+// applies to the category×city pages, but keeping the spoke tail segment
+// (that composable has no spoke segment to preserve).
+const canonicalLocaleSlug = definition.value
+  ? getActivityLocaleSlug(definition.value.slug, locale.value) ?? definition.value.slug
+  : null
+if (definition.value && canonicalLocaleSlug && canonicalLocaleSlug !== categoryParam.value) {
+  await navigateTo(
+    localePath(`/categories/${canonicalLocaleSlug}/${props.type}`),
+    { redirectCode: 301, replace: true },
+  )
+}
+
 const canonicalSlug = computed(() => definition.value?.slug ?? '_directory')
 
 const { data: entry, error } = await useAsyncData(

@@ -10,6 +10,7 @@ import {
   CITY_URL_PATTERN,
   categoryCityPath,
   resolveChainRouteParams,
+  splitLocalePrefix,
 } from "~~/shared/city-chain";
 
 /**
@@ -89,13 +90,16 @@ export async function useCategoryRouteI18n() {
       countrySlugParam &&
       citySlugParam &&
       catalogDef.value
-        ? categoryCityPath(
+        ? // Keep the chain shape AND the locale prefix — categoryCityPath is
+          // locale-unprefixed by contract, so re-attach the prefix of the
+          // incoming path (/en/… stays /en/…; no cross-language 301 hop).
+          `${splitLocalePrefix(route.path).prefix}${categoryCityPath(
             "country-city-category",
             getActivityLocaleSlug(catalogDef.value.slug, locale.value) ??
               catalogDef.value.slug,
             countrySlugParam,
             citySlugParam,
-          )
+          )}`
         : redirectPath;
     if (target !== route.path) {
       await navigateTo(target, { redirectCode: 301, replace: true });

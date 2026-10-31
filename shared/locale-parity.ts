@@ -142,6 +142,11 @@ export const REQUIRED_KEY_FAMILIES: readonly string[] = [
   "categories",
   "venues",
   "search",
+  // Chain city hubs + public group pages — high-traffic SEO surfaces whose
+  // copy must never fall back to French at runtime (a missing cityHub block
+  // rendered raw keys on every /{country}/{city} chain page).
+  "cityHub",
+  "groups",
 ];
 
 /**

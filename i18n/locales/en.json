@@ -838,6 +838,7 @@
     "emptyTitle": "No venues listed in {city} yet",
     "emptyDescription": "Do you know a venue in {city}? Add it for free.",
     "emptyCta": "Add a venue",
+    "emptySearchCta": "Search venues",
     "seoKeywords": "venue {city}, gym {city}, fitness {city}, yoga {city}, spa {city}, venue directory {city}",
     "breadcrumbHome": "Home",
     "breadcrumbCountries": "Countries",

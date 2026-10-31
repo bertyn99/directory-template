@@ -71,10 +71,9 @@ import { buildCategoryPath, findActivityDefinition, MOST_SEARCHED_CATEGORIES } f
 const { t, locale } = useI18n()
 const breadcrumbLinks = useBreadcrumbItems()
 
-const NEW_HUB_SLUGS = ['tai-chi', 'sambo']
 const featuredCategoryLinks = computed(() => {
     const categories = curatedCategories.value || []
-    const slugs = [...MOST_SEARCHED_CATEGORIES, ...NEW_HUB_SLUGS]
+    const slugs = [...MOST_SEARCHED_CATEGORIES]
     return slugs
         .map((slug) => {
             const target = findActivityDefinition(slug)?.slug ?? slug

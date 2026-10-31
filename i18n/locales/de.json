@@ -529,5 +529,31 @@
     "venueCount": "{count} Standorte",
     "allVenuesBy": "Alle Standorte von {name}",
     "seoTitle": "{name} — {count} Standorte"
+  },
+  "cityHub": {
+    "title": "Venues in {city} | Directory Template",
+    "description": "Finden Sie die besten Venues in {city}, {country}. {count} gelistete Venues mit Bewertungen und Infos.",
+    "h1": "Venues in {city}",
+    "venueCount": "{count} Venues gelistet",
+    "statsVenues": "{count} Venues",
+    "statsActivities": "{count} Kategorien",
+    "statsTopActivity": "Top: {activity}",
+    "introText": "Entdecken Sie die besten Venues in {city}, {country}. Fitness, Yoga, Spa — finden Sie die ideale Adresse für Ihre Aktivität.",
+    "activitiesTitle": "Kategorien in {city}",
+    "activityVenueCount": "{count} Venues",
+    "topVenuesTitle": "Top Venues in {city}",
+    "ctaTitle": "Sie betreiben ein Venue?",
+    "ctaDescription": "Fügen Sie Ihr Venue in {city} kostenlos hinzu.",
+    "ctaButton": "Mein Venue hinzufügen",
+    "nearbyCitiesTitle": "Städte in der Nähe",
+    "nearbyCityVenues": "{count} Venues",
+    "emptyTitle": "Keine Venues in {city} gelistet",
+    "emptyDescription": "Kennen Sie ein Venue in {city}? Fügen Sie es kostenlos hinzu.",
+    "emptyCta": "Venue hinzufügen",
+    "emptySearchCta": "Venue suchen",
+    "seoKeywords": "venue {city}, Fitnessstudio {city}, Fitness {city}, Yoga {city}, Spa {city}, Venue-Verzeichnis {city}",
+    "breadcrumbHome": "Startseite",
+    "breadcrumbCountries": "Länder",
+    "comingSoon": "Demnächst verfügbar"
   }
 }

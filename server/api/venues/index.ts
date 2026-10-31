@@ -83,18 +83,19 @@ export default cachedEventHandler(
       const error = err as Error;
       console.error("Error searching venues:", error);
 
-      // Handle validation errors
+      // Handle validation errors — status fields are statusCode/statusMessage
+      // (h3's `status`/`statusText` are not createError options), and the raw
+      // ZodError must NOT leak to the client.
       if (error.name === "ZodError") {
         throw createError({
-          status: 400,
-          statusText: "Invalid query parameters",
-          data: error,
+          statusCode: 400,
+          statusMessage: "Invalid query parameters",
         });
       }
 
       throw createError({
-        status: 500,
-        statusText: "Failed to search venues",
+        statusCode: 500,
+        statusMessage: "Failed to search venues",
       });
     }
   },

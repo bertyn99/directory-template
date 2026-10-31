@@ -9,7 +9,6 @@ export default defineEventHandler(async (event) => {
   try {
     // Use readValidatedBody with Zod for consistent validation
     const venueData = await readValidatedBody(event, insertVenueWithAddressSchema.parse);
-
     // Get the user from the session
     const session = await requireUserSession(event);
     if (!session.user?.username || !session.user?.id) {
@@ -19,6 +18,29 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
 
     const { address, ...venue } = venueData;
+
+    // Owner-editable allowlist (audit M2 — mass assignment): the full insert
+    // schema accepts system columns (statusCode, trustRank, isManuallyEdited,
+    // slug, normalizedName…) that only the pipeline/admin may change. Strip
+    // everything the owner is not allowed to set.
+    const OWNER_EDITABLE_VENUE_FIELDS = new Set([
+      "name",
+      "description",
+      "website",
+      "bookingUrl",
+      "bookingPartner",
+      "tel",
+      "phones",
+      "socialMedia",
+      "openingHours",
+      "aliases",
+      "searchPicture",
+      "categoryId",
+      "franchiseId",
+    ]);
+    const ownerVenue = Object.fromEntries(
+      Object.entries(venue).filter(([key]) => OWNER_EDITABLE_VENUE_FIELDS.has(key)),
+    );
 
     // Verify ownership via userVenues junction table
     const ownership = await db.query.userVenues.findFirst({
@@ -50,7 +72,7 @@ export default defineEventHandler(async (event) => {
       const updatedVenueResult = await tx
         .update(venues)
         .set({
-          ...venue,
+          ...ownerVenue,
           addressId,
         } as Venue)
         .where(eq(venues.id, venueData.id))

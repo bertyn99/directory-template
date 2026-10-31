@@ -3,7 +3,7 @@ import {
   getTopCountryCitiesWithVenueCountByActivitySlug,
 } from "~~/server/db/queries/venues";
 import { getCountryByCitySlug } from "~~/server/db/queries/cities";
-import { majorEuCityFromPublicSlug } from "~~/shared/major-eu-cities";
+import { majorEuCityFromPublicSlug, majorEuCityCountrySlug } from "~~/shared/major-eu-cities";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,8 +11,8 @@ export default defineEventHandler(async (event) => {
 
     if (!slug) {
       throw createError({
-        status: 400,
-        statusText: "Activity slug is required",
+        statusCode: 400,
+        statusMessage: "Activity slug is required",
       });
     }
 
@@ -37,9 +37,21 @@ export default defineEventHandler(async (event) => {
 
     return {
       data: {
-        eu,
+        eu: eu.map((city) => ({
+          ...city,
+          // Country slug for the country-first chain URL (major-city map —
+          // canonical names only; null falls back to the categories URL).
+          countrySlug: majorEuCityCountrySlug(city.name),
+        })),
         country: country
-          ? { code: country.code, cities: countryCities }
+          ? {
+              code: country.code,
+              slug: country.slug,
+              cities: countryCities.map((city) => ({
+                ...city,
+                countrySlug: country.slug,
+              })),
+            }
           : null,
         // Canonical name slug for the requested city — pages 301 zip/alias
         // variants (paris-75011, lisboa) to this form. Catalog major-city

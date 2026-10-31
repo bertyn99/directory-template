@@ -1,22 +1,35 @@
 import { scrapeVenuesJob } from "~~/server/jobs/scrape-venues";
 import { batchMatchVenues } from "~~/server/services/scraping/matching-batch";
+import { scrapeKeyMatches } from "~~/server/utils/apiAccess";
+import { z } from "zod";
 import { useDrizzle } from "#imports";
 import { recordScraperRun, checkScraperYield } from "~~/server/services/monitoring/scraperAlerts";
+
+// Bounded body (audit L1): an authenticated ops endpoint, but never trust an
+// unbounded payload — sizes cap at one scrape run's realistic maximum.
+const scrapeRequestBodySchema = z.object({
+  sourceIds: z.array(z.string().max(64)).max(20).optional(),
+  dryRun: z.boolean().optional(),
+  maxPlaces: z.number().int().min(1).max(5000).optional(),
+  skipStateCheck: z.boolean().optional(),
+  runMatching: z.boolean().optional(),
+});
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const apiKey = getRequestHeader(event, "x-scrape-key");
-  if (!apiKey || apiKey !== config.scrapeApiKey) {
+  // Timing-safe compare — never a plain string equality on a secret.
+  if (!scrapeKeyMatches(apiKey, config.scrapeApiKey)) {
     throw createError({ statusCode: 401, statusMessage: "Invalid or missing API key" });
   }
-  const body = await readBody(event).catch(() => ({}));
+  const body = await readValidatedBody(event, scrapeRequestBodySchema.parse);
   const {
     sourceIds,
     dryRun = true,
     maxPlaces = 50,
     skipStateCheck = false,
     runMatching = false,
-  } = body || {};
+  } = body;
 
   const metrics = await scrapeVenuesJob({
     sourceIds,

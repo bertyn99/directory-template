@@ -455,6 +455,20 @@ export default defineNuxtConfig({
         },
       },
     },
+    // City→country resolver used by the /categories 301 middleware — public
+    // and param-space unbounded, so a crawler must not be able to enumerate
+    // it at line rate (audit L2). NOT applied to /api/cities/hub/**: that one
+    // also serves in-process SSR fetches for every hub page render and must
+    // stay unlimited server-side.
+    "/api/cities/resolve/**": {
+      security: {
+        rateLimiter: {
+          tokensPerInterval: 10,
+          interval: 60_000,
+          throwError: true,
+        },
+      },
+    },
     "/api/auth/verify-email": {
       security: {
         rateLimiter: {
@@ -513,8 +527,15 @@ export default defineNuxtConfig({
     },
   },
 
+  seo: {
+    // 301 any request whose host differs from site.url (www vs apex, stale
+    // aliases) to the canonical origin — one host = one indexable URL space.
+    // Dev-guarded by the module (no-op in `pnpm dev`). Audit F9.
+    redirectToCanonicalSiteUrl: true,
+  },
+
   robots: {
-    disallow: ["/dashboard", "/admin"],
+    disallow: ["/dashboard", "/admin", "/api"],
     // Robots v7: block AI *training* crawlers (GPTBot, ClaudeBot,
     // Google-Extended, meta-externalagent, CCBot, Applebot-Extended, …) while
     // keeping AI *search* agents (OAI-SearchBot, ChatGPT-User, Claude-SearchBot,

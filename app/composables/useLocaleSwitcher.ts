@@ -1,7 +1,11 @@
 import type { Locale } from "vue-i18n";
-import { buildCategoryPath, findActivityDefinition } from "~~/shared/activities";
+import { directoryConfig } from "~~/directory.config";
 
-const SUPPORTED_LOCALES = ["fr", "en", "de", "es", "it", "pt"] as const;
+/**
+ * Active locales only — the switcher never offers a locale the app does not
+ * route (single source: directoryConfig.locales, same as CONTENT_LOCALES).
+ */
+const SUPPORTED_LOCALES = directoryConfig.locales;
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export function isAppLocale(value: string): value is AppLocale {
@@ -9,35 +13,21 @@ export function isAppLocale(value: string): value is AppLocale {
 }
 
 /**
- * Switch locale while preserving translated dynamic route params
- * (e.g. /categories/boxe-thai → /de/categories/thai-boxen via useSetI18nParams).
+ * Switch locale, preserving the CURRENT surface (category × city chain,
+ * spoke, venue…) through the per-locale route params registered by
+ * useCategoryRouteI18n / useSetI18nParams on those pages. Country/city slugs
+ * are identical across locales, the category slug is localized:
+ * /france/paris/spa → /en/france/paris/<localized-slug>.
  * @see https://i18n.nuxtjs.org/docs/composables/use-set-i18n-params
  */
 export function useLocaleSwitcher() {
   const switchLocalePath = useSwitchLocalePath();
   const route = useRoute();
 
-  function resolveCategoryLocalePath(code: AppLocale): string | null {
-    const categoriesParam = route.params.category;
-    if (typeof categoriesParam !== "string") return null;
-
-    const def = findActivityDefinition(decodeURIComponent(categoriesParam));
-    if (!def) return null;
-
-    const cityParam = route.params.cities;
-    const citySlug =
-      typeof cityParam === "string"
-        ? decodeURIComponent(cityParam)
-        : undefined;
-
-    return buildCategoryPath(code, def.slug, citySlug);
-  }
-
   async function switchToLocale(code: string) {
     if (!isAppLocale(code)) return;
 
-    const categoryPath = resolveCategoryLocalePath(code);
-    const targetPath = categoryPath ?? switchLocalePath(code as Locale);
+    const targetPath = switchLocalePath(code as Locale);
 
     if (targetPath && targetPath !== route.fullPath) {
       await navigateTo(targetPath);

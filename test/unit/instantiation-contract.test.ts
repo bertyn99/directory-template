@@ -92,7 +92,13 @@ describe("instantiation contract — locales", () => {
 
   it("enforces full key-tree parity with fr for verified locales (tier 1)", () => {
     const frKeys = flattenLocaleTree(loadLocaleJson(REFERENCE_LOCALE)).sort();
-    for (const code of VERIFIED_LOCALES) {
+    // Tier 1 applies only to verified locales that are ACTIVE — an
+    // instantiation shipping fr+de with en inactive must not be held to en's
+    // full-parity bar (the gate would block a launch en isn't part of).
+    const activeVerified = directoryConfig.locales.filter((code) =>
+      VERIFIED_LOCALES.includes(code),
+    );
+    for (const code of activeVerified) {
       if (code === REFERENCE_LOCALE) continue;
       const localeKeys = flattenLocaleTree(loadLocaleJson(code)).sort();
       const { missingInLocale, extraInLocale } = compareLocaleTree(
@@ -250,8 +256,14 @@ describe("instantiation contract — taxonomy", () => {
     }
   });
 
-  it("references known slugs from families and mostSearched", () => {
-    for (const family of directoryConfig.taxonomy.families) {
+  it("keeps mostSearched non-empty (it feeds the home grid and the categories hub)", () => {
+    expect(
+      directoryConfig.taxonomy.mostSearched.length,
+      "taxonomy.mostSearched is empty — the home page and categories hub render their featured grids from it",
+    ).toBeGreaterThan(0);
+  });
+
+  it("references known slugs from families and mostSearched", () => {    for (const family of directoryConfig.taxonomy.families) {
       for (const slug of family.categories) {
         expect(slugs, `family "${family.id}" references unknown slug "${slug}"`).toContain(slug);
       }
@@ -302,6 +314,22 @@ describe("instantiation contract — facets", () => {
     }
   });
 
+  it("keeps facet keys and enum values URL-safe (they ride facet=key:value params)", () => {
+    const SAFE = /^[a-z0-9_-]+$/;
+    for (const facet of facets) {
+      expect(
+        SAFE.test(facet.key),
+        `facet key "${facet.key}" must match ${SAFE} — ':' splits key:value and '.' breaks the param grammar`,
+      ).toBe(true);
+      for (const value of facet.values ?? []) {
+        expect(
+          SAFE.test(value),
+          `facet "${facet.key}" value "${value}" must match ${SAFE} (it is the :value half of a facet param)`,
+        ).toBe(true);
+      }
+    }
+  });
+
   it("ships i18n labels for every facet + enum value in every active locale", () => {
     for (const code of directoryConfig.locales) {
       const localeKeySet = new Set(flattenLocaleTree(loadLocaleJson(code)));
@@ -336,6 +364,13 @@ describe("instantiation contract — billing", () => {
     expect(new Set(ids).size, "billing plan ids must be unique").toBe(ids.length);
   });
 
+  it("ships at least one paid plan (the pricing table renders from it)", () => {
+    expect(
+      directoryConfig.billing.plans.length,
+      "billing.plans is empty — the pricing table and the session plan vocabulary would render nothing",
+    ).toBeGreaterThan(0);
+  });
+
   it("uses lowercase-slug plan ids (Stripe lookup-key fragments)", () => {
     const ids = [...directoryConfig.billing.plans.map((plan) => plan.id), directoryConfig.billing.freePlanId];
     for (const id of ids) {
@@ -344,6 +379,68 @@ describe("instantiation contract — billing", () => {
       // tolerated only as a deliberate legacy exception (the sample ships
       // `premium_pro`, the id already created in Stripe by the origin app).
       expect(id, `plan id "${id}" must match /^[a-z0-9_-]+$/`).toMatch(/^[a-z0-9_-]+$/);
+    }
+  });
+});
+
+describe("instantiation contract — affiliates", () => {
+  const partners = directoryConfig.affiliates.partners;
+  const products = directoryConfig.affiliates.products;
+
+  /** Built-in partners (no config entry) + the config-declared ones. */
+  const isKnownPartner = (id: string) =>
+    id === "amazon" || Object.prototype.hasOwnProperty.call(partners, id);
+
+  it("resolves every product primary and alt to a known partner", () => {
+    for (const product of products) {
+      if (product.primary) {
+        expect(
+          isKnownPartner(product.primary),
+          `product "${product.id}" primary "${product.primary}" is not a known partner (amazon or affiliates.partners key) — a mistyped id silently degrades to the default`,
+        ).toBe(true);
+      }
+      for (const alt of product.alts ?? []) {
+        expect(
+          isKnownPartner(alt.partner),
+          `product "${product.id}" alt "${alt.partner}" is not a known partner`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("resolves every product ctaKey to an i18n key in every active locale", () => {
+    for (const product of products) {
+      if (!product.ctaKey) continue;
+      for (const code of directoryConfig.locales) {
+        const keys = new Set(flattenLocaleTree(loadLocaleJson(code)));
+        expect(
+          keys.has(product.ctaKey),
+          `${code}.json is missing "${product.ctaKey}" (product "${product.id}" button label) — a mistyped key renders its raw path`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("keeps direct-mode landing URLs http(s)", () => {
+    const isHttpUrl = (value: string) => /^https?:\/\//i.test(value);
+    for (const [partnerId, partner] of Object.entries(partners)) {
+      for (const [, program] of Object.entries(partner.programs ?? {})) {
+        if (!program || program.linkMode !== "direct") continue;
+        for (const [urlLocale, url] of Object.entries(program.urls ?? {})) {
+          expect(
+            isHttpUrl(url),
+            `partner "${partnerId}" direct urls.${urlLocale} must be an http(s) URL (rendered as an href — .url() alone accepts javascript:)`,
+          ).toBe(true);
+        }
+      }
+    }
+    for (const product of products) {
+      for (const [urlLocale, url] of Object.entries(product.urls ?? {})) {
+        expect(
+          isHttpUrl(url),
+          `product "${product.id}" urls.${urlLocale} must be an http(s) URL`,
+        ).toBe(true);
+      }
     }
   });
 });
