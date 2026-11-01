@@ -51,7 +51,7 @@ pnpm lint             # oxlint + eslint (two-stage)
 pnpm lint:ox          # Strict: oxlint --deny-warnings + eslint --max-warnings 0
 pnpm lint:fix         # eslint --fix
 pnpm db:generate      # Drizzle Kit generate migrations
-pnpm db:migrate       # Drizzle Kit apply migrations
+pnpm db:migrate       # Drizzle Kit apply migrations (real Postgres via DATABASE_URL; embedded PGlite migrates itself on boot)
 pnpm db:studio        # Drizzle Kit studio GUI
 pnpm seed             # tsx server/db/seed.ts
 pnpm instantiate:locale <code>  # stub content + i18n parity report for a draft locale (see i18n/README.md)
@@ -169,11 +169,11 @@ State explicitly so agents don't "fix" them by accident:
 
 ## Environment Variables
 
-No `.env.example` — check `nuxt.config.ts` runtimeConfig.
+No `.env.example` — check `nuxt.config.ts` runtimeConfig. **Zero-config dev default:** with no `DATABASE_URL` the app boots an embedded, persistent PGlite database at `.data/pglite` (auto-migrated on first `pnpm dev`; `pnpm seed` targets it too) and with no `REDIS_HOST` the storage mounts + rate limiter fall back to local disk / memory — `pnpm dev` works on a fresh clone with only `NUXT_SESSION_PASSWORD` + `CSRF_SECRET` set. Production sets `DATABASE_URL` + `REDIS_*` and gets the real Postgres pool + Redis storage.
 
-**Required:** `DATABASE_URL`, `NUXT_SESSION_PASSWORD` (32+ chars), `CSRF_SECRET`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`, `SCRAPE_API_KEY` (`X-Scrape-Key` header on `/api/venues/scrape`).
+**Required:** `NUXT_SESSION_PASSWORD` (32+ chars), `CSRF_SECRET`, `SCRAPE_API_KEY` (`X-Scrape-Key` header on `/api/venues/scrape`).
 
-**Optional:** `PLUNK_SECRET_API_KEY`, `PLUNK_BASE_URL`, `PLUNK_DEFAULT_FROM` (email), `GEMINI_API_KEY` (AI matching/enrichment/content gen), `LOCATIONIQ_API_KEY`, `LOCATIONIQ_REGION`, `GEONAMES_USERNAME` (geocoding chain LocationIQ → GeoNames → Nominatim), `TEST_DATABASE_URL`.
+**Optional:** `DATABASE_URL` (absent ⇒ embedded PGlite at `.data/pglite`), `REDIS_HOST`/`REDIS_PORT`/`REDIS_PASSWORD`/`REDIS_DB` (absent ⇒ local fs storage + in-memory rate limiter), `PLUNK_SECRET_API_KEY`, `PLUNK_BASE_URL`, `PLUNK_DEFAULT_FROM` (email), `GEMINI_API_KEY` (AI matching/enrichment/content gen), `LOCATIONIQ_API_KEY`, `LOCATIONIQ_REGION`, `GEONAMES_USERNAME` (geocoding chain LocationIQ → GeoNames → Nominatim), `TEST_DATABASE_URL`.
 
 **Monetization (public, runtime):**
 - Affiliates: `NUXT_PUBLIC_AFFILIATE_RAKUTEN_SITE_ID`, `NUXT_PUBLIC_AFFILIATE_AWIN_AFFID` — publisher ids; empty ⇒ partner buttons hidden globally. Amazon associate tags per storefront: `NUXT_PUBLIC_AFFILIATE_AMAZON_TAG_US` / `_UK` / `_FR` / `_DE` / `_ES` / `_IT` / `_PT` (pt tag rides the amazon.es storefront — Amazon has no Portuguese marketplace); empty ⇒ untagged search URLs.

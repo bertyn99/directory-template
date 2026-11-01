@@ -22,6 +22,19 @@ const csrfEncryptKey = createHash("sha256")
   .digest("hex")
   .slice(0, 32);
 
+// Zero-config dev defaults (template mode): without REDIS_HOST the storage
+// mounts and the rate limiter fall back to local disk / in-memory instead of
+// requiring a Redis server. Production sets REDIS_* and gets Redis storage.
+const USE_REDIS_STORAGE = Boolean(process.env.REDIS_HOST);
+const redisMount = () => ({
+  driver: "redis",
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+  password: process.env.REDIS_PASSWORD,
+  db: process.env.REDIS_DB,
+});
+const localMount = (base: string) => ({ driver: "fs", base });
+
 // v1 perf: prerender pure-content blog routes (active locales only). Blog
 // pages are content-only — no DB data — so baking them at build time is
 // freshness-safe. DB-coupled pages (categories hubs, city hubs, venues) stay
@@ -234,27 +247,20 @@ export default defineNuxtConfig({
     // the node server serves them when Accept-Encoding allows.
     compressPublicAssets: { gzip: true, brotli: true },
     traceDeps: ["drizzle-orm*"],
+    // PGlite loads its WASM via import.meta URLs — never bundle it into the
+    // server chunks; keep it an external node dependency.
+    externals: {
+      external: ["@electric-sql/pglite"],
+    },
     prerender: {
       routes: blogPrerenderRoutes,
     },
     storage: {
-      redis: {
-        driver: "redis",
-        host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT,
-        password: process.env.REDIS_PASSWORD,
-        db: process.env.REDIS_DB,
-      },
-      // Nitro's cache layer (route-rule swr + cachedEventHandler) backed by
-      // Redis so caches survive deploys instead of resetting with the process.
-      // Entries are prefixed `cache:` — same db as app data is safe.
-      cache: {
-        driver: "redis",
-        host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT,
-        password: process.env.REDIS_PASSWORD,
-        db: process.env.REDIS_DB,
-      },
+      // Same db as app data is safe; entries are prefixed by mount name.
+      redis: USE_REDIS_STORAGE ? redisMount() : localMount(".data/storage/redis"),
+      // Nitro's cache layer (route-rule swr + cachedEventHandler): Redis in
+      // production so caches survive deploys; local disk in embedded mode.
+      cache: USE_REDIS_STORAGE ? redisMount() : localMount(".data/storage/cache"),
     },
 
     experimental: {
@@ -658,15 +664,21 @@ export default defineNuxtConfig({
       tokensPerInterval: 550,
       interval: 300_000,
       headers: true,
-      driver: {
-        name: "redis",
-        options: {
-          host: process.env.REDIS_HOST,
-          port: Number(process.env.REDIS_PORT) || 6379,
-          password: process.env.REDIS_PASSWORD,
-          db: Number(process.env.REDIS_DB) || 0,
-        },
-      },
+      // Redis bucket in production; omitting the driver falls back to the
+      // in-memory default in embedded dev mode (per-process, fine for dev).
+      ...(USE_REDIS_STORAGE
+        ? {
+            driver: {
+              name: "redis",
+              options: {
+                host: process.env.REDIS_HOST,
+                port: Number(process.env.REDIS_PORT) || 6379,
+                password: process.env.REDIS_PASSWORD,
+                db: Number(process.env.REDIS_DB) || 0,
+              },
+            },
+          }
+        : {}),
       ipHeader: "cf-connecting-ip",
       // Whitelist sentinel set by the allow-crawlers plugin (server/plugins/allow-crawlers.ts):
       // verified NuxtSEO bots get cf-connecting-ip overridden to "nuxtseo-bot".
@@ -777,14 +789,17 @@ export default defineNuxtConfig({
   // Dedicated DB (REDIS_DB + 1) so flushing the shared app DB never wipes it.
   // Docs: nuxtseo.com/docs/skew-protection/guides/storage-configuration
   skewProtection: {
-    storage: {
-      driver: "redis",
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT || 6379),
-      password: process.env.REDIS_PASSWORD,
-      db: Number(process.env.REDIS_DB || 0) + 1,
-      base: "skew-protection",
-    },
+    storage: USE_REDIS_STORAGE
+      ? {
+          driver: "redis",
+          host: process.env.REDIS_HOST,
+          port: Number(process.env.REDIS_PORT || 6379),
+          password: process.env.REDIS_PASSWORD,
+          db: Number(process.env.REDIS_DB || 0) + 1,
+          base: "skew-protection",
+        }
+      // Dedicated db in production (+1); local disk in embedded dev mode.
+      : { driver: "fs", base: ".data/storage/skew-protection" },
   },
   aiReady: {
     // IndexNow key — MUST be the key string, not a boolean. The module serves

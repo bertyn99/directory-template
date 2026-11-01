@@ -28,6 +28,16 @@ import { useDrizzle } from '../utils/drizzle'
 import { directoryConfig } from '../../directory.config'
 import * as schema from './schemas/index'
 
+// Zero-config default (template mode): with no DATABASE_URL, seed the embedded
+// persistent PGlite database (.data/pglite) — the same instance the dev server
+// boots (server/plugins/db-default-pglite.ts). Must run BEFORE useDrizzle()
+// so the injected instance is the embedded one.
+if (!process.env.DATABASE_URL) {
+  console.log('[seed] No DATABASE_URL — seeding the embedded PGlite database (.data/pglite)')
+  const { createAppPglite, PGLITE_DATA_DIR } = await import('./pglite')
+  await createAppPglite(PGLITE_DATA_DIR)
+}
+
 // drizzle-seed generates rows for EVERY table in the schema it receives.
 // The scraping registry (sources / source_countries) is REAL data owned by
 // the migration chain (20260511083452_seed_sources_and_countries) — exclude
@@ -222,6 +232,10 @@ async function main() {
             ],
           }),
           thematiqueId: funcs.int({ minValue: 1, maxValue: 5 }),
+          // Locale-slugs jsonb — the app iterates its values as strings
+          // (normalizeKey); random generated values crash the catalog
+          // mapping. Keep the column default ({}).
+          slugs: funcs.default({ defaultValue: {} }),
         },
       },
 
@@ -258,6 +272,11 @@ async function main() {
         count: 40,
         columns: {
           name: funcs.companyName({}),
+          // Public-listing gate: searchVenues/city hubs filter
+          // status='active' — a random text value would hide every seeded
+          // venue from the entire public directory. (Key = the Drizzle
+          // property name, statusCode — the DB column is "status".)
+          statusCode: funcs.valuesFromArray({ values: ['active'] }),
           categoryId: funcs.default({ defaultValue: null }),
           attributes: funcs.default({ defaultValue: null }),
           franchiseId: funcs.valuesFromArray({
@@ -274,6 +293,19 @@ async function main() {
           }),
           tel: funcs.phoneNumber({ template: '+33 # ## ## ## ##' }),
           addressId: funcs.int({ minValue: 1, maxValue: 40 }),
+          // JSONB / structured columns the UI renders conditionally — random
+          // generated values break the render contract (rating.google,
+          // description locale map…). Keep them at their column default.
+          rating: funcs.default({ defaultValue: null }),
+          description: funcs.default({ defaultValue: null }),
+          openingHours: funcs.default({ defaultValue: null }),
+          socialMedia: funcs.default({ defaultValue: null }),
+          aliases: funcs.default({ defaultValue: null }),
+          phones: funcs.default({ defaultValue: null }),
+          isManuallyEdited: funcs.default({ defaultValue: null }),
+          access: funcs.default({ defaultValue: null }),
+          shop: funcs.default({ defaultValue: null }),
+          planning: funcs.default({ defaultValue: null }),
         },
       },
 
