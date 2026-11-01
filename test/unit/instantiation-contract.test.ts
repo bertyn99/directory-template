@@ -351,6 +351,52 @@ describe("instantiation contract — facets", () => {
   });
 });
 
+describe("instantiation contract — design kit", () => {
+  const design = directoryConfig.design;
+
+  /** Tailwind built-in palettes usable as ui.colors values (Nuxt UI docs). */
+  const BUILT_IN = new Set([
+    "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal",
+    "cyan", "sky", "blue", "indigo", "violet", "purple", "fuchsia", "pink",
+    "rose", "slate", "gray", "zinc", "neutral", "stone",
+  ]);
+
+  /** Custom palettes declared with @theme static in main.css (`--color-<name>-50`). */
+  function hasCustomPalette(name: string): boolean {
+    const css = readFileSync(fromRoot("/app/assets/css/main.css"), "utf8");
+    return css.includes(`--color-${name}-50`);
+  }
+
+  const isPalette = (name: string) => BUILT_IN.has(name) || hasCustomPalette(name);
+
+  it("resolves the accents to a Tailwind palette or a custom @theme palette", () => {
+    expect(
+      isPalette(design.accent),
+      `design.accent "${design.accent}" is neither a Tailwind built-in palette nor a custom @theme static palette in main.css — Nuxt UI would render no primary color`,
+    ).toBe(true);
+    if (design.accentSecondary) {
+      expect(
+        isPalette(design.accentSecondary),
+        `design.accentSecondary "${design.accentSecondary}" is not a known palette`,
+      ).toBe(true);
+    }
+    expect(
+      isPalette(design.neutral),
+      `design.neutral "${design.neutral}" is not a known palette`,
+    ).toBe(true);
+  });
+
+  it("keeps the radius and display-transform tokens to their allowed values", () => {
+    expect(["sharp", "soft", "round"]).toContain(design.radius);
+    expect(["uppercase", "none", "capitalize"]).toContain(design.displayTransform);
+  });
+
+  it("declares non-empty font families for display and body", () => {
+    expect(design.fonts.display.trim().length).toBeGreaterThan(0);
+    expect(design.fonts.body.trim().length).toBeGreaterThan(0);
+  });
+});
+
 describe("instantiation contract — billing", () => {
   it("uses an ISO 4217 currency code", () => {
     expect(directoryConfig.billing.currency).toMatch(/^[A-Z]{3}$/);

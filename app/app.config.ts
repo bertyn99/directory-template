@@ -1,15 +1,25 @@
+import directoryConfig from "~~/directory.config";
+
+// Nuxt UI layer of the design kit (directoryConfig.design is THE surface —
+// this file only maps its tokens onto Nuxt UI's semantic config, so a niche
+// rebrand never edits component code or this file).
+const { accent, accentSecondary, neutral } =
+  directoryConfig.design;
+
+/** Heading/display text-transform as an arbitrary property — the value is a
+    CSS variable injected from directoryConfig.design (nuxt.config head style),
+    so the token stays overridable in one place. */
+const displayTransformClass =
+  "[text-transform:var(--design-display-transform,uppercase)]";
+
 export default defineAppConfig({
   ui: {
     colors: {
-      // Neutral base theme — the template ships NO brand palette. Primary and
-      // secondary resolve to Tailwind's built-in `slate` scale, exposed by
-      // @nuxt/ui as --ui-primary / --ui-secondary CSS variables. Each niche app
-      // re-themes HERE at instantiation: point primary at another built-in
-      // palette, or define a custom @theme static palette in
-      // app/assets/css/main.css and reference its name (see docs/design-system.md).
-      primary: "slate",
-      secondary: "slate",
-      neutral: "slate",
+      // Accent = THE brand color of the instantiation (design.accent);
+      // secondary folds into the accent unless a distinct one is declared.
+      primary: accent,
+      secondary: accentSecondary ?? accent,
+      neutral,
     },
     card: {
       slots: { root: 'divide-none' }
@@ -17,44 +27,44 @@ export default defineAppConfig({
     // Typography customization for Nuxt UI components
     button: {
       slots: {
-        base: 'font-display font-bold uppercase tracking-wide'
-      }
+        base: `font-display font-bold ${displayTransformClass} tracking-wide active:translate-y-px`,
+      },
     },
     badge: {
       slots: {
-        base: 'font-display font-bold uppercase tracking-wide'
+        base: `font-display font-bold ${displayTransformClass} tracking-wide`
       }
     },
     // Prose typography customization
     prose: {
       h1: {
         slots: {
-          base: 'font-display font-bold text-4xl uppercase tracking-tight'
+          base: `font-display font-bold text-4xl ${displayTransformClass} tracking-tight`
         }
       },
       h2: {
         slots: {
-          base: 'font-display font-bold text-3xl uppercase tracking-tight'
+          base: `font-display font-bold text-3xl ${displayTransformClass} tracking-tight`
         }
       },
       h3: {
         slots: {
-          base: 'font-display font-bold text-2xl uppercase tracking-tight'
+          base: `font-display font-bold text-2xl ${displayTransformClass} tracking-tight`
         }
       },
       h4: {
         slots: {
-          base: 'font-display font-bold text-xl uppercase tracking-tight'
+          base: `font-display font-bold text-xl ${displayTransformClass} tracking-tight`
         }
       },
       h5: {
         slots: {
-          base: 'font-display font-bold text-lg uppercase tracking-tight'
+          base: `font-display font-bold text-lg ${displayTransformClass} tracking-tight`
         }
       },
       h6: {
         slots: {
-          base: 'font-display font-bold text-base uppercase tracking-tight'
+          base: `font-display font-bold text-base ${displayTransformClass} tracking-tight`
         }
       },
       p: {

@@ -3,23 +3,33 @@
 
 @source "../../../content/**/*";
 
-/* Directory Template — NEUTRAL base theme.
-   The template ships no brand palette: `primary`, `secondary` and `neutral`
-   resolve to Tailwind's built-in `slate` scale via app/app.config.ts
-   (`ui.colors`). Nuxt UI exposes them as CSS variables (--ui-primary,
-   --ui-secondary, …) consumed by every component, so a niche app re-themes
-   WITHOUT touching component code — see docs/design-system.md. Two strategies:
+/* Directory Template — NEUTRAL base theme, TOKEN-DRIVEN (directory.config.ts
+   → `design`). The visual identity lives in ONE config block:
 
-     1. Point `ui.colors.primary` at another built-in palette (zero CSS changes).
-     2. Define a custom palette and point `ui.colors.primary` at its name:
+     design: {
+       accent: "slate",            // Nuxt UI primary (Tailwind palette or a
+                                   // custom @theme static palette, e.g. "brand")
+       accentSecondary: undefined, // optional; folds into accent when omitted
+       neutral: "slate",           // slate | zinc | stone | gray | neutral
+       radius: "sharp",            // sharp 2px | soft 8px | round 12px
+       fonts: { display: "Manrope", body: "Manrope" },  // any Google Font
+       displayTransform: "uppercase", // uppercase | none | capitalize
+     }
 
-        @theme static {
-            --color-brand-50: #f0f9ff;
-            --color-brand-500: #0284c7;   <- consumed as --ui-primary (light)
-            --color-brand-600: #0369a1;   <- consumed as --ui-primary (dark)
-            --color-brand-950: #082f49;
-        }
-        // app/app.config.ts → ui.colors.primary: "brand"
+   nuxt.config.ts turns it into fonts.families + injected :root variables;
+   app/app.config.ts maps the accents onto Nuxt UI's semantic colors
+   (--ui-primary / --ui-secondary, consumed by every component). A niche
+   rebrands by editing the design block ONLY — no component or CSS edits.
+
+   Custom palette recipe (when no Tailwind built-in fits):
+
+     @theme static {
+         --color-brand-50: #f0f9ff;
+         --color-brand-500: #0284c7;   <- consumed as --ui-primary (light)
+         --color-brand-600: #0369a1;   <- consumed as --ui-primary (dark)
+         --color-brand-950: #082f49;
+     }
+     // directory.config.ts → design.accent: "brand"
 
    The `static` modifier is REQUIRED for custom palettes: these vars are
    consumed by @nuxt/ui's runtime inline style (--ui-color-primary-* refs),
@@ -28,13 +38,20 @@
    ≥4.5:1 contrast on white (WCAG AA) for `text-primary` and white-on-solid
    buttons. */
 @theme {
-    /* Font Families - Registered for Tailwind utilities.
-       The base template ships a single family: Manrope serves both body and
-       display roles (headings fall back to it). Niche apps override
-       --font-display with their own heading face; every `font-display`
-       utility and component slot picks the change up automatically. */
-    --font-sans: "Manrope", sans-serif;
-    --font-display: "Manrope", sans-serif;
+    /* Font Families — TOKEN-DRIVEN (directoryConfig.design.fonts).
+       The values are CSS variables injected from the config on :root:root
+       (nuxt.config head style); the "Manrope" fallbacks are what renders
+       with the shipped neutral config. @nuxt/fonts resolves whatever family
+       names the config declares (fonts.families is built from the same
+       tokens), so a niche swaps its faces in directory.config.ts only. */
+    --font-sans: var(--design-font-body, "Manrope"), sans-serif;
+    --font-display: var(--design-font-display, "Manrope"), sans-serif;
+
+    /* Corner-radius system — directoryConfig.design.radius sets --ui-radius
+       (sharp 2px | soft 8px | round 12px). Mapping Tailwind's rounded-sm
+       onto it keeps the site's ONE radius scale: hardcoded rounded-sm
+       utilities across pages/components follow the token automatically. */
+    --radius-sm: var(--ui-radius, 0.125rem);
 }
 
 /* Chart series: primary (--ui-chart-1) is wired by @nuxt/ui from the primary
@@ -65,9 +82,12 @@
         @apply font-sans font-normal leading-normal text-default;
     }
 
-    /* Headings: display face — Bold (700), Uppercase (base template: Manrope) */
+    /* Headings: display face — Bold (700). Text-transform is a design-kit
+       token (directoryConfig.design.displayTransform, injected as a CSS
+       variable): uppercase (shipped) | none | capitalize. */
     h1, h2, h3, h4, h5, h6 {
-        @apply font-display font-bold uppercase leading-tight tracking-tight text-default;
+        @apply font-display font-bold leading-tight tracking-tight text-default;
+        text-transform: var(--design-display-transform, uppercase);
     }
 
     /* Heading Sizes */
@@ -115,27 +135,12 @@
 
     /* Utility Classes */
     .font-display {
-        @apply font-display font-bold uppercase;
+        @apply font-display font-bold;
+        text-transform: var(--design-display-transform, uppercase);
     }
 
     .font-body {
         @apply font-sans font-normal;
-    }
-
-    /* Nuxt UI Component Typography Overrides */
-    /* Ensure buttons use display font for uppercase text */
-    [class*="UButton"] {
-        @apply font-display font-bold tracking-wide;
-    }
-
-    /* Cards should use body font */
-    [class*="UCard"] {
-        @apply font-sans;
-    }
-
-    /* Badges use display font for uppercase */
-    [class*="UBadge"] {
-        @apply font-display font-bold tracking-wide;
     }
 
     /* Prose Typography (for blog content) */
@@ -149,7 +154,8 @@
     .prose h4,
     .prose h5,
     .prose h6 {
-        @apply font-display font-bold uppercase leading-tight tracking-tight;
+        @apply font-display font-bold leading-tight tracking-tight;
+        text-transform: var(--design-display-transform, uppercase);
     }
 
     .prose p {

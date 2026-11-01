@@ -22,6 +22,40 @@ const csrfEncryptKey = createHash("sha256")
   .digest("hex")
   .slice(0, 32);
 
+// Design kit (directoryConfig.design) — ONE surface for the visual identity.
+// - Fonts resolve through @nuxt/fonts at build (google provider, weights
+//   400/500/700; the 700 face is preloaded — see the LCP note below).
+// - The tokens reach CSS as variables injected on :root:root (double
+//   specificity so they win over @theme defaults regardless of bundle
+//   order): --design-font-* feed main.css @theme, --ui-radius drives every
+//   Nuxt UI radius + Tailwind's rounded-sm, --design-display-transform is
+//   the heading/button/badge text-transform token.
+const RADIUS_REM: Record<string, string> = {
+  sharp: "0.125rem",
+  soft: "0.5rem",
+  round: "0.75rem",
+};
+const designFonts = directoryConfig.design.fonts;
+const designFontFamilies = [
+  {
+    name: designFonts.body,
+    provider: "google" as const,
+    weights: [400, 500, 700] as const,
+    preload: { weights: [700], subsets: ["latin"], styles: ["normal"] },
+  },
+  ...(designFonts.display !== designFonts.body
+    ? [
+        {
+          name: designFonts.display,
+          provider: "google" as const,
+          weights: [700, 800] as const,
+          preload: { weights: [700], subsets: ["latin"], styles: ["normal"] },
+        },
+      ]
+    : []),
+];
+const designCssVars = `:root:root{--ui-radius:${RADIUS_REM[directoryConfig.design.radius] ?? RADIUS_REM.sharp};--design-font-body:"${designFonts.body}";--design-font-display:"${designFonts.display}";--design-display-transform:${directoryConfig.design.displayTransform};}`;
+
 // Zero-config dev defaults (template mode): without REDIS_HOST the storage
 // mounts and the rate limiter fall back to local disk / in-memory instead of
 // requiring a Redis server. Production sets REDIS_* and gets Redis storage.
@@ -132,20 +166,12 @@ export default defineNuxtConfig({
     "motion-v/nuxt",
   ],
   fonts: {
-    families: [
-      // LCP-critical (YGG-29): PSI mobile showed the hero <h1> as the LCP
-      // element with ~1 s "element render delay" — subsetted Google fonts are
-      // excluded from automatic preloading (unicode-range), so the 700 face
-      // was discovered only after entry.css parsed and the swap moved LCP
-      // ~1 s past FCP. Emit <link rel="preload"> for exactly that face.
-      // Manrope is the template's single family (display headings + body).
-      {
-        name: "Manrope",
-        provider: "google",
-        weights: [400, 500, 700],
-        preload: { weights: [700], subsets: ["latin"], styles: ["normal"] },
-      },
-    ],
+    // Design kit (directoryConfig.design.fonts) — resolved by @nuxt/fonts at
+    // build. Weights 400/500/700; the 700 face is preloaded (LCP-critical,
+    // YGG-29: the hero <h1> is the LCP element and subsetted Google fonts
+    // are excluded from automatic preloading, so the bold face must be
+    // explicitly emitted as <link rel="preload">).
+    families: designFontFamilies,
   },
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
@@ -153,6 +179,8 @@ export default defineNuxtConfig({
     head: {
       // Per-instantiation: Google Search Console verification token for YOUR domain.
       meta: [{ name: "verification", content: "" }],
+      // Design-kit tokens (directoryConfig.design) — see designCssVars above.
+      style: [{ innerHTML: designCssVars }],
     },
   },
 

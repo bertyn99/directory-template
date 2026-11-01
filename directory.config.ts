@@ -280,6 +280,58 @@ export interface DirectoryConfig {
   locales: readonly ConfigLocale[];
 
   /**
+   * Design kit — the whole visual identity rides on these tokens. They feed
+   * Nuxt UI's semantic layer (ui.colors), the global radius/font/transform
+   * CSS variables and @nuxt/fonts, so a niche rebrands by editing THIS block
+   * only: app/app.config.ts + app/assets/css/main.css read from it, no
+   * component code ever changes. See docs/design-system.md for the full
+   * theming guide and the custom-palette recipe.
+   */
+  design: {
+    /**
+     * Accent palette (Nuxt UI `primary`): any Tailwind built-in name
+     * (emerald, rose, sky, amber, indigo…) or the name of a custom palette
+     * defined with `@theme static` in app/assets/css/main.css (e.g. "brand"
+     * — recipe in docs/design-system.md). Contrast rule: keep the 500/600
+     * shades ≥ 4.5:1 on white. One accent per site — this is THE brand color.
+     */
+    accent: string;
+    /**
+     * Secondary accent (Nuxt UI `secondary`) — used sparingly for
+     * complementary highlights. Omit to fold it into the accent (monochrome
+     * discipline: one accent carries the whole site).
+     */
+    accentSecondary?: string;
+    /**
+     * Neutral scale for text/borders/backgrounds (Nuxt UI `neutral`):
+     * slate (cool, shipped) | zinc (modern) | stone (warm) | gray | neutral.
+     */
+    neutral: string;
+    /**
+     * Corner-radius system — ONE scale across the whole site:
+     * 'sharp' (2px, architectural — shipped) | 'soft' (8px, friendly) |
+     * 'round' (12px, consumer). Maps to --ui-radius + Tailwind's rounded-sm.
+     */
+    radius: "sharp" | "soft" | "round";
+    /**
+     * Display (headings, buttons, badges) + body faces. Any Google Font name
+     * — @nuxt/fonts resolves them at build (weights 400/500/700, 700
+     * preloaded for LCP). Distinct pairing = instant identity; keeping both
+     * identical (shipped Manrope) is the neutral fallback.
+     */
+    fonts: {
+      display: string;
+      body: string;
+    };
+    /**
+     * Display text-transform: 'uppercase' (architectural, shipped) | 'none'
+     * (editorial) | 'capitalize'. Applies to headings, the font-display
+     * utility, buttons and badges through one CSS variable.
+     */
+    displayTransform: "uppercase" | "none" | "capitalize";
+  };
+
+  /**
    * Category taxonomy — the SINGLE SOURCE of truth for the editorial catalog.
    * shared/activities.ts derives ALL of its runtime data (ACTIVITY_CATALOG,
    * aliases, junk/alias-only sets, families, most-searched list, seed ids)
@@ -490,6 +542,20 @@ export const directoryConfig = {
   },
   defaultLocale: "fr",
   locales: ["fr", "en"],
+
+  design: {
+    // Neutral base: NO brand palette shipped. Slate carries primary,
+    // secondary and neutral so the sample reads as a template, not a brand.
+    // An instantiation sets its accent here (one line) — e.g. accent: "emerald".
+    accent: "slate",
+    neutral: "slate",
+    radius: "sharp",
+    fonts: {
+      display: "Manrope",
+      body: "Manrope",
+    },
+    displayTransform: "uppercase",
+  },
 
   taxonomy: {
     categories: [
