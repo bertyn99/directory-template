@@ -24,23 +24,24 @@ Stack: **Nuxt 4 · Nuxt UI v4 · Drizzle ORM (PostgreSQL) · nuxt-auth-utils · 
 
 ```bash
 pnpm install          # packageManager pnpm@11.8.0, node 24 (see .nvmrc)
-# set envs: DATABASE_URL, NUXT_SESSION_PASSWORD, CSRF_SECRET, REDIS_*, SCRAPE_API_KEY
-pnpm db:migrate       # apply migrations — fresh DB ONLY (legacy migrations are historical)
-pnpm seed
-pnpm dev              # → localhost:3000
+# zero-config dev: only NUXT_SESSION_PASSWORD + CSRF_SECRET (+ SCRAPE_API_KEY)
+# are needed — no DATABASE_URL boots an embedded PGlite (.data/pglite), no
+# REDIS_HOST falls back to local storage. Production sets DATABASE_URL + REDIS_*.
+pnpm dev              # → localhost:3000 (first boot replays all migrations)
+pnpm seed             # sample venues/users into the database (embedded or remote)
 ```
 
 ## Instantiate a new directory
 
 1. Copy this repo to the new app.
-2. Edit **`directory.config.ts`** — brand, url, locales, taxonomy (categories/aliases/families + venue attribute `facets` and their `facet.*` i18n keys), affiliates, billing plans, ad slots, silo spokes, scraping sources + seed cities.
+2. Edit **`directory.config.ts`** — brand, url, locales, **`design`** (accent palette, neutral scale, radius, display/body fonts, display text-transform — the whole visual identity, see below), taxonomy (categories/aliases/families + venue attribute `facets` and their `facet.*` i18n keys), affiliates, booking partners, billing plans, ad slots, silo spokes, scraping sources + seed cities.
 3. Replace/neutralize `i18n/locales/` (fr+en verified; de/es/it/pt are unverified drafts — see `i18n/README.md`) and the sample content (`content/{fr,en}/blog/` + `content/{fr,en}/category-guides/`).
 4. Add your scraping sources (adapters + registry + `sources/ids.ts` mirror; list the ids in the config — the registry validates them at boot).
-5. Create Stripe products matching the `billing.plans[].id` ids (price lookup keys `${id}_monthly` / `${id}_yearly`).
+5. Create Stripe products matching the `billing.plans[].id` ids (price lookup keys `${id}_monthly` / `${id}_yearly`). Production only: set `DATABASE_URL` (+ `db:migrate` on the fresh database) and `REDIS_*`.
 
 Done — zero engine-code edits: `shared/` engines (catalog, nav, silo routes, affiliates, sitemap) derive everything from the config, and `pnpm test:unit` runs an instantiation contract test that fails fast on incoherent config.
 
-Then re-theme in `app/assets/css/main.css` + `app/app.config.ts` only — component code never changes (see `docs/design-system.md`).
+**Re-theme = the `design` block.** Accent palette, neutrals, corner-radius system, display/body Google Fonts and the heading text-transform all live there; Nuxt UI semantic colors, the radius variable and @nuxt/fonts derive from it. No component, CSS or app.config edits. Full contract + custom-palette recipe: `docs/design-system.md`.
 
 ## Commands
 
@@ -55,7 +56,7 @@ Full command list, conventions, env vars and gotchas: **`AGENTS.md`**.
 
 ## Design system
 
-Neutral base theme: Tailwind **slate** palette, **Manrope**-only typography, `rounded-sm` max radius, no drop shadows, hover via border color. Re-brand per niche via CSS variables + `app.config.ts` — zero component edits. Full contract: `docs/design-system.md`.
+Token-driven neutral base — the identity lives in the `design` block of `directory.config.ts` (accent, neutrals, radius, fonts, heading transform); shipped values are deliberately neutral (slate, Manrope, sharp corners, uppercase display). Re-brand = edit that block; no component edits. Full contract + custom-palette recipe: `docs/design-system.md`.
 
 ## Docs
 

@@ -141,17 +141,9 @@ Layered: API routes → services → queries → schemas. Redis-backed Nitro sto
 
 ## Design System — Token-Driven Neutral Base
 
-See **`docs/design-system.md`** for the full contract. The whole visual identity is ONE config block — `directory.config.ts` → `design` — and the shipped values are deliberately neutral:
+The whole visual identity is ONE block: `directory.config.ts` → `design` (accent, optional accentSecondary, neutral scale, radius `sharp|soft|round`, display/body Google Fonts, heading text-transform). Shipped values are deliberately neutral (slate, Manrope, sharp, uppercase) so the sample reads as a template, not a brand. `app/app.config.ts` + `app/assets/css/main.css` are read-only plumbing that maps the tokens onto Nuxt UI — a niche rebrands by editing the block ONLY, and the contract test validates it (palette resolution, enums, fonts).
 
-- **`design.accent`** (Nuxt UI primary): Tailwind built-in palette name or a custom `@theme static` palette in `main.css` ("brand" recipe in the doc). Shipped `slate` (no brand). One accent carries the site; `accentSecondary` optional.
-- **`design.neutral`**: slate | zinc | stone | gray | neutral — surfaces/text/borders scale.
-- **`design.radius`**: `sharp` (2px, shipped) | `soft` (8px) | `round` (12px) — one scale, drives `--ui-radius` AND Tailwind's `rounded-sm`. Never `rounded-lg` / `rounded-xl` / `rounded-full`.
-- **`design.fonts`**: `{ display, body }` — any Google Font, resolved + preloaded by @nuxt/fonts at build. Shipped Manrope both roles.
-- **`design.displayTransform`**: `uppercase` (shipped) | `none` | `capitalize` — headings, `font-display` utility, buttons, badges.
-- **Re-theming contract**: a niche app edits the `design` block ONLY — `app/app.config.ts` (colors → semantic layer) and `app/assets/css/main.css` (token wiring) read from it; component code never changes. The contract test validates the block.
-- **Depth & physics**: flat borders (`border-default`), NO `shadow-*`, hover via `border-primary`, 150ms transitions, buttons depress `active:translate-y-px`.
-
-Never `rounded-lg` / `rounded-xl` / `rounded-full` / `shadow-*` / `any` type.
+Standing invariants regardless of tokens: ONE accent carries the site (semantic colors for functional states only), semantic utilities never raw palette colors, WCAG AA floor on `text-dimmed`/`text-muted`, flat borders (`border-default`) with NO `shadow-*`, hover via `border-primary`, 150ms transitions, buttons depress `active:translate-y-px`, never `rounded-lg` / `rounded-xl` / `rounded-full` / `any` type. Full contract + custom-palette recipe: **`docs/design-system.md`** (single source — this file intentionally does not duplicate it).
 
 ## Monetization Invariants
 

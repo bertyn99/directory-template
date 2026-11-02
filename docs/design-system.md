@@ -1,5 +1,9 @@
 # Design System — Token-Driven Neutral Base
 
+> Scope: THIS doc covers the theme only. The full instantiation workflow (brand, locales,
+> taxonomy, i18n, scraping, billing) lives in `README.md` + `AGENTS.md` — the two are
+> deliberately not duplicated here.
+
 This document describes the **neutral base theme** of the **Directory Template** and the
 contract each niche app follows to re-theme it. It is implemented with **Nuxt UI v4** and
 **Tailwind CSS v4** (CSS-variable theming in `app/assets/css/main.css` + `app/app.config.ts`).

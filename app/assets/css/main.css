@@ -3,40 +3,11 @@
 
 @source "../../../content/**/*";
 
-/* Directory Template — NEUTRAL base theme, TOKEN-DRIVEN (directory.config.ts
-   → `design`). The visual identity lives in ONE config block:
-
-     design: {
-       accent: "slate",            // Nuxt UI primary (Tailwind palette or a
-                                   // custom @theme static palette, e.g. "brand")
-       accentSecondary: undefined, // optional; folds into accent when omitted
-       neutral: "slate",           // slate | zinc | stone | gray | neutral
-       radius: "sharp",            // sharp 2px | soft 8px | round 12px
-       fonts: { display: "Manrope", body: "Manrope" },  // any Google Font
-       displayTransform: "uppercase", // uppercase | none | capitalize
-     }
-
-   nuxt.config.ts turns it into fonts.families + injected :root variables;
-   app/app.config.ts maps the accents onto Nuxt UI's semantic colors
-   (--ui-primary / --ui-secondary, consumed by every component). A niche
-   rebrands by editing the design block ONLY — no component or CSS edits.
-
-   Custom palette recipe (when no Tailwind built-in fits):
-
-     @theme static {
-         --color-brand-50: #f0f9ff;
-         --color-brand-500: #0284c7;   <- consumed as --ui-primary (light)
-         --color-brand-600: #0369a1;   <- consumed as --ui-primary (dark)
-         --color-brand-950: #082f49;
-     }
-     // directory.config.ts → design.accent: "brand"
-
-   The `static` modifier is REQUIRED for custom palettes: these vars are
-   consumed by @nuxt/ui's runtime inline style (--ui-color-primary-* refs),
-   not by Tailwind utilities — without it v4 tree-shakes the definitions out
-   of the compiled CSS. Custom palettes should keep their 500/600 shades at
-   ≥4.5:1 contrast on white (WCAG AA) for `text-primary` and white-on-solid
-   buttons. */
+/* Theme = TOKEN-DRIVEN. The visual identity lives in ONE place:
+   directory.config.ts -> design (accent, neutrals, radius, fonts, heading
+   transform). This file only wires the injected tokens into Tailwind's
+   @theme — the full theming guide and the custom-palette recipe live in
+   docs/design-system.md. */
 @theme {
     /* Font Families — TOKEN-DRIVEN (directoryConfig.design.fonts).
        The values are CSS variables injected from the config on :root:root
